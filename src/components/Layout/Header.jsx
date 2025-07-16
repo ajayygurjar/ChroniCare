@@ -1,6 +1,6 @@
 
 import { Container, Nav, Dropdown, Navbar } from 'react-bootstrap'
-import { logout } from '../../store/authSlice'
+import { logout } from '../../../store/authSlice'
 import { useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { Link } from 'react-router-dom'
@@ -15,7 +15,7 @@ const Header = () => {
     <>
       <Navbar bg='primary' variant='dark' expand='lg' collapseOnSelect>
         <Container>
-          <Navbar.Brand href='/'>ChroniCare</Navbar.Brand>
+          <Navbar.Brand as={Link} to='/'>ChroniCare</Navbar.Brand>
 
           <Navbar.Toggle aria-controls='basic-navbar-nav' />
           <Navbar.Collapse id='basic-navbar-nav'>
@@ -26,7 +26,7 @@ const Header = () => {
                 </Dropdown.Toggle>
 
                 <Dropdown.Menu>
-                  <Dropdown.Item as={Link} to='/dasboard'>Dashboard</Dropdown.Item>
+                  <Dropdown.Item as={Link} to='/dashboard'>Dashboard</Dropdown.Item>
                   <Dropdown.Divider />
                   <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
                 </Dropdown.Menu>
