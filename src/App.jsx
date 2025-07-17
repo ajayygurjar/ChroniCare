@@ -6,6 +6,8 @@ import Dashboard from "./components/Pages/Dashboard";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { rehydrateUser } from "../store/authSlice";
+import PatientHistory from "./components/Patient/PatientHistory";
+
 
 const App = () => {
   const dispatch = useDispatch();
@@ -33,6 +35,10 @@ const App = () => {
         {
           path: "dashboard",
           element: <Dashboard />,
+        },
+        {
+          path:'/patient/history',
+          element:<PatientHistory/>
         },
       ],
     },

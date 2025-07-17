@@ -7,7 +7,10 @@ const Sidebar = ({ role }) => {
 
   const menuItems = {
     doctor: [{ label: "Dashboard", path: "/dashboard" }],
-    patient: [{ label: "Dashboard", path: "/dashboard" }],
+    patient: [
+      { label: "Dashboard", path: "/dashboard" },
+      { label: "Medical History", path: "/patient/history" },
+    ],
   };
 
   const activeStyle = {
