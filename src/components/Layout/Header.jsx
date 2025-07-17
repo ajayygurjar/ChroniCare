@@ -1,16 +1,20 @@
-import { Container, Nav, Dropdown, Navbar } from "react-bootstrap";
+import { Container, Nav, Dropdown, Navbar,Image } from "react-bootstrap";
 import { logout } from "../../../store/authSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 const Header = () => {
-  const { token } = useSelector((state) => state.auth);
+  const { user,role } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const handleLogout = () => {
     dispatch(logout());
-    navigate("/");
+    navigate("/",{replace:true});
   };
+
+  const avatarUrl = `https://ui-avatars.com/api/?name=${user || "U"}&background=0D8ABC&color=fff`;
+
+
   return (
     <>
       <Navbar bg="primary" variant="dark" expand="lg" collapseOnSelect>
@@ -22,10 +26,17 @@ const Header = () => {
           <Navbar.Toggle aria-controls="basic-navbar-nav" />
           <Navbar.Collapse id="basic-navbar-nav">
             <Nav className="ms-auto">
-              {token ? (
+              {user ? (
                 <Dropdown align="end">
                   <Dropdown.Toggle variant="secondary" id="dropdown-user">
-                    User
+                    <Image 
+                    src={avatarUrl}
+                    roundCircle
+                    height="30"
+                    width='30'
+                    className='me-2'
+                    />
+                    {role}
                   </Dropdown.Toggle>
 
                   <Dropdown.Menu>

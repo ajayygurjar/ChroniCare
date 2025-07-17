@@ -1,8 +1,14 @@
-import React from 'react'
 
+import PatientDashboard from "../Patient/PatientDashboard";
+import DoctorDashboard from "../Doctor/DoctorDashboard";
+import { useSelector } from "react-redux";
 const Dashboard = () => {
+    const {role}=useSelector((state)=>state.auth);
+   if(role==='patient')return <PatientDashboard/>
+   if(role==='doctor')return <DoctorDashboard/>
+   
   return (
-    <div><h1>Dashboard</h1></div>
+    <p>You are not authorized to view this page.</p>
   )
 }
 

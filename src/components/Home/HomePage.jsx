@@ -1,8 +1,16 @@
 import React from "react";
 import { Container, Row, Col, Card, Button } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Link,Navigate } from "react-router-dom";
+
 
 const HomePage = () => {
+
+  const {userId}=useSelector((state)=>state.auth);
+
+  if(userId){
+    return <Navigate to='/dashboard' replace/>
+  }
   return (
     <Container className="mt-5">
       <h1 className="mb-4">Welcome to ChroniCare</h1>

@@ -1,8 +1,19 @@
 import React from "react";
 import { Nav } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
-const Sidebar = () => {
+const Sidebar = ({ role }) => {
+  const location = useLocation();
+
+  const menuItems = {
+    doctor: [{ label: "Dashboard", path: "/dashboard" }],
+    patient: [{ label: "Dashboard", path: "/dashboard" }],
+  };
+
+  const activeStyle = {
+    fontWeight: "bold",
+    color: "#0d6efd",
+  };
   return (
     <div
       style={{
@@ -13,21 +24,21 @@ const Sidebar = () => {
         borderRight: "1px solid #dee2e6",
       }}
     >
-      <h5 className="mb-4">User Panel</h5>
+      <h5 className="mb-4">
+        {role === "doctor" ? "Doctor Panel" : "Patient Panel"}
+      </h5>
 
       <Nav className="flex-column">
-        <Nav.Link as={Link} to="/dashboard">
-          Dashboard
-        </Nav.Link>
-        <Nav.Link as={Link} to="/section1">
-          Section 1
-        </Nav.Link>
-        <Nav.Link as={Link} to="/section2">
-          Section 2
-        </Nav.Link>
-        <Nav.Link as={Link} to="/profile">
-          Section 3
-        </Nav.Link>
+        {menuItems[role]?.map((item) => (
+          <Nav.Link
+            key={item.path}
+            as={Link}
+            to={item.path}
+            style={location.pathname === item.path ? activeStyle : {}}
+          >
+            {item.label}
+          </Nav.Link>
+        ))}
       </Nav>
     </div>
   );
