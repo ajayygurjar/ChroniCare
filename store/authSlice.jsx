@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
-import { FIREBASE_API_KEY, FIREBASE_DB_URL } from "../firebase/firebaseConfig";
+import { FIREBASE_API_KEY, FIREBASE_DB_URL } from "../src/firebase/firebaseConfig";
 
 export const loginWithRole = createAsyncThunk(
   "auth/loginWithRole",

@@ -2,7 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import RootLayout from "./components/Layout/RootLayout";
 import HomePage from "./components/Home/HomePage";
 import AuthPage from "./components/Auth/AuthPage";
-import Dashboard from "./components/Pages/Dashboard";
+import Dashboard from "./Pages/Dashboard";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { rehydrateUser } from "../store/authSlice";

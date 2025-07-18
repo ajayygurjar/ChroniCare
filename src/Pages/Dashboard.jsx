@@ -1,6 +1,6 @@
 
-import PatientDashboard from "../Patient/PatientDashboard";
-import DoctorDashboard from "../Doctor/DoctorDashboard";
+import PatientDashboard from "../components/Patient/PatientDashboard";
+import DoctorDashboard from "../components/Doctor/DoctorDashboard";
 import { useSelector } from "react-redux";
 const Dashboard = () => {
     const {role}=useSelector((state)=>state.auth);
