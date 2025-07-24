@@ -1,32 +1,27 @@
+import { useState, useEffect } from "react";
+import { Button } from "react-bootstrap";
+import axiosInstance from "../../../utils/axiosInstance";
+import { useSelector } from "react-redux";
+import AddRecordModal from "./AddRecordModal";
+import HistoryTable from "./HistoryTable";
 
-import { useState,useEffect } from 'react';
-import { Button,} from 'react-bootstrap';
-import axiosInstance from '../../../utils/axiosInstance';
-import { useSelector } from 'react-redux';
-import AddRecordModal from './AddRecordModal';
-import HistoryTable from './HistoryTable';
-
-
-const cleanEmail = (email) => email.replace(/[@.]/g, '');
-const PatientHistory = ({viewUserId}) => {
-
-    const { user, userId } = useSelector((state) => state.auth);
+const cleanEmail = (email) => email.replace(/[@.]/g, "");
+const PatientHistory = ({ viewUserId }) => {
+  const { user, userId } = useSelector((state) => state.auth);
   const isDoctor = !!viewUserId;
 
   const currentUserId = isDoctor ? viewUserId : userId;
   const currentUserEmail = isDoctor ? null : user;
 
-    const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ diagnosis: '', notes: '' });
-   const [prescriptionForm, setPrescriptionForm] = useState({});
+  const [formData, setFormData] = useState({ diagnosis: "", notes: "" });
+  const [prescriptionForm, setPrescriptionForm] = useState({});
   const [doctorInfo, setDoctorInfo] = useState({});
-
-
 
   const fetchHistory = async () => {
     try {
-      let cleanedKey = '';
+      let cleanedKey = "";
 
       if (isDoctor) {
         const userRes = await axiosInstance.get(`/users/${viewUserId}.json`);
@@ -38,13 +33,16 @@ const PatientHistory = ({viewUserId}) => {
 
       const res = await axiosInstance.get(`/history/${cleanedKey}.json`);
       if (res.data) {
-        const parsed = Object.entries(res.data).map(([id, val]) => ({ id, ...val }));
+        const parsed = Object.entries(res.data).map(([id, val]) => ({
+          id,
+          ...val,
+        }));
         setHistory(parsed);
       } else {
         setHistory([]);
       }
     } catch (error) {
-      console.error('Error fetching history:', error);
+      console.error("Error fetching history:", error);
     }
   };
 
@@ -54,25 +52,22 @@ const PatientHistory = ({viewUserId}) => {
       if (res.data) {
         setDoctorInfo({
           name: `${res.data.firstName} ${res.data.lastName}`,
-          address: res.data.address || '',
+          address: res.data.address || "",
         });
       }
     } catch (err) {
-      console.error('Error fetching doctor info', err);
+      console.error("Error fetching doctor info", err);
     }
   };
 
   useEffect(() => {
     if (currentUserId) fetchHistory();
     if (isDoctor) fetchDoctorInfo();
-  }, [currentUserId]);
-
-
-  
+  }, [currentUserId, isDoctor, currentUserEmail, viewUserId, userId]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();if (!currentUserEmail) return;
-
+    e.preventDefault();
+    if (!currentUserEmail) return;
 
     const newHistory = {
       diagnosis: formData.diagnosis,
@@ -83,11 +78,11 @@ const PatientHistory = ({viewUserId}) => {
     const cleanedEmail = cleanEmail(currentUserEmail);
     await axiosInstance.post(`/history/${cleanedEmail}.json`, newHistory);
 
-    setFormData({ diagnosis: '', notes: '', file: null });
+    setFormData({ diagnosis: "", notes: "", file: null });
     setShowModal(false);
     fetchHistory();
   };
-   const handlePrescriptionSubmit = async (e, itemId) => {
+  const handlePrescriptionSubmit = async (e, itemId) => {
     e.preventDefault();
     const item = prescriptionForm[itemId];
     if (!item) return;
@@ -109,8 +104,8 @@ const PatientHistory = ({viewUserId}) => {
     fetchHistory();
   };
 
-
-  return ( <div className="container mt-4">
+  return (
+    <div className="container mt-4">
       {!isDoctor && (
         <Button className="mb-3" onClick={() => setShowModal(true)}>
           Add New Record
@@ -136,7 +131,8 @@ const PatientHistory = ({viewUserId}) => {
           handleSubmit={handleSubmit}
         />
       )}
-    </div>  );
+    </div>
+  );
 };
 
 export default PatientHistory;

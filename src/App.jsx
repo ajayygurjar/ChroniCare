@@ -1,14 +1,19 @@
+import React, { Suspense,useEffect } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import RootLayout from "./components/Layout/RootLayout";
-import HomePage from "./components/Home/HomePage";
-import AuthPage from "./components/Auth/AuthPage";
-import Dashboard from "./Pages/Dashboard";
-import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { rehydrateUser } from "../store/authSlice";
-import PatientHistory from "./components/Patient/PatientHistory";
-import DoctorPatients from "./components/Doctor/DoctorPatients";
-import SinglePatientView from "./components/Doctor/SinglePatientView";
+import RootLayout from "./components/Layout/RootLayout";
+import Loader from "./components/UI/Loader";
+
+//lazy loading
+const HomePage = React.lazy(() => import("./components/Home/HomePage"));
+const AuthPage = React.lazy(() => import("./components/Auth/AuthPage"));
+const Dashboard = React.lazy(() => import("./Pages/Dashboard"));
+const PatientHistory = React.lazy(() => import("./components/Patient/PatientHistory"));
+const DoctorPatients = React.lazy(() => import("./components/Doctor/DoctorPatients"));
+const SinglePatientView = React.lazy(() => import("./components/Doctor/SinglePatientView"));
+const AppointmentPage = React.lazy(() => import("./components/Appointments/AppointmentPage"));
+
 
 const App = () => {
   const dispatch = useDispatch();
@@ -48,12 +53,18 @@ const App = () => {
             path:'doctor/patient/:id',
             element:<SinglePatientView/>
            },
+                 {
+        path: "/appointments",
+        element: <AppointmentPage />,
+      },
       ],
     },
   ]);
   return (
     <>
+    <Suspense fallback={<Loader />}>
       <RouterProvider router={router} />
+      </Suspense>
     </>
   );
 };

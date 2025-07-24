@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axiosInstance from "../../../utils/axiosInstance";
-import { Table, Button, Modal, Form } from "react-bootstrap";
 import { useSelector } from "react-redux";
 import PatientDetails from "./SinglePatientView/PatientDetails";
 import MedicalHistoryTable from "./SinglePatientView/MedicalHistoryTable";

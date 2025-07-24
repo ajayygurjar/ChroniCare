@@ -6,12 +6,15 @@ const Sidebar = ({ role }) => {
   const location = useLocation();
 
   const menuItems = {
-    doctor: [{ label: "Dashboard", path: "/dashboard" },
-        { label: "Patients", path: "/doctor/patients" },
+    doctor: [
+      { label: "Dashboard", path: "/dashboard" },
+      { label: "Patients", path: "/doctor/patients" },
+      { label: "Appointments", path: "/appointments" },
     ],
     patient: [
       { label: "Dashboard", path: "/dashboard" },
       { label: "Medical History", path: "/patient/history" },
+      { label: "Appointments", path: "/appointments" },
     ],
   };
 
