@@ -47,10 +47,10 @@ const AppointmentPage = () => {
 
   const fetchDoctors = async () => {
     try {
-      const res = await axiosInstance.get('/users.json');
+      const res = await axiosInstance.get('/doctors.json');
       if (res.data) {
         const doctorList = Object.entries(res.data)
-          .filter(([_, user]) => user.role === 'doctor')
+          .filter(([_, doctor]) => doctor.role === 'doctor')
           .map(([id, doctor]) => ({ id, ...doctor }));
         setDoctors(doctorList);
       }

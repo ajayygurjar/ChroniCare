@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from '../utils/axiosInstance';
 
-// Helper function
+
 const cleanEmail = (email) => email.replace(/[@.]/g, '');
 
 // Fetch appointments

@@ -15,11 +15,20 @@ export const loginWithRole = createAsyncThunk(
         }
       );
       const userId = res.data.localId;
-      const roleRes = await axios.get(
-        `${FIREBASE_DB_URL}/users/${userId}/role.json`
+
+      const rolePaths=['doctors','patients'];
+      let role = null;
+
+      for(let path of rolePaths){
+        const roleRes = await axios.get(
+        `${FIREBASE_DB_URL}/${path}/${userId}/role.json`
       );
-      const role = roleRes.data;
-      if (role !== expectedRole) {
+      if(roleRes.data){
+        role=roleRes.data;
+        break;
+      }
+      }
+      if (!role||role !== expectedRole) {
         return thunkAPI.rejectWithValue(`Not authorized as ${expectedRole}`);
       }
 
@@ -55,7 +64,9 @@ export const signupUser = createAsyncThunk(
 
       const userId = res.data.localId;
 
-      await axios.put(`${FIREBASE_DB_URL}/users/${userId}.json`, {
+       const path = role === "doctor" ? "doctors" : "patients";
+
+      await axios.put(`${FIREBASE_DB_URL}/${path}/${userId}.json`, {
         email,
         role,
         ...profile,
