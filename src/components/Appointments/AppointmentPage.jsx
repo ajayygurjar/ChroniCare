@@ -15,7 +15,7 @@ import axiosInstance from '../../../utils/axiosInstance';
 
 const AppointmentPage = () => {
   const dispatch = useDispatch();
-  const { userId, role, user } = useSelector((state) => state.auth);
+  const { userId, role } = useSelector((state) => state.auth);
   const {
     appointments,
     loading,
@@ -29,13 +29,13 @@ const AppointmentPage = () => {
 
   // Fetch appointments on load
   useEffect(() => {
-    if (user) {
-      dispatch(fetchAppointments({ userEmail: user, role }));
+    if (userId) {
+      dispatch(fetchAppointments({ userId, role }));
     }
     if (role === 'patient') {
       fetchDoctors();
     }
-  }, [dispatch, user, role]);
+  }, [dispatch,userId, role]);
 
   // Clear messages after a delay
   useEffect(() => {
@@ -50,7 +50,6 @@ const AppointmentPage = () => {
       const res = await axiosInstance.get('/doctors.json');
       if (res.data) {
         const doctorList = Object.entries(res.data)
-          .filter(([_, doctor]) => doctor.role === 'doctor')
           .map(([id, doctor]) => ({ id, ...doctor }));
         setDoctors(doctorList);
       }
@@ -60,20 +59,15 @@ const AppointmentPage = () => {
   };
 
   const handleBookAppointment = (formData) => {
-    const doctor = doctors.find(d => d.id === formData.doctorId);
-    if (!doctor) return;
 
     const appointmentData = {
       ...formData,
-      patientId: userId,
-      patientEmail: user,
-      doctorEmail: doctor.email,
+      doctorId:formData.doctorId,
     };
 
     dispatch(bookAppointment({
       appointmentData,
-      patientEmail: user,
-      doctorEmail: doctor.email,
+      patientId:userId,
     }));
 
     setShowBookModal(false);
@@ -87,7 +81,6 @@ const AppointmentPage = () => {
       appointmentId,
       newStatus,
       appointment,
-      userEmail: user,
     }));
   };
 

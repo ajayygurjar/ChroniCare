@@ -2,17 +2,21 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axiosInstance from '../utils/axiosInstance';
 
 
-const cleanEmail = (email) => email.replace(/[@.]/g, '');
+const getUserData = async (userId, role) => {
+  const collection = role === 'doctor' ? 'doctors' : 'patients';
+  const response = await axiosInstance.get(`/${collection}/${userId}.json`);
+  return response.data;
+};
 
 // Fetch appointments
 export const fetchAppointments = createAsyncThunk(
   'appointments/fetchAppointments',
-  async ({ userEmail, role }, thunkAPI) => {
+  async ({ userId, role }, thunkAPI) => {
     try {
-      const cleanedEmail = cleanEmail(userEmail);
+      
       const endpoint = role === 'doctor' 
-        ? `/appointments/doctor/${cleanedEmail}.json`
-        : `/appointments/patient/${cleanedEmail}.json`;
+        ? `/appointments/doctor/${userId}.json`
+        : `/appointments/patient/${userId}.json`;
       
       const response = await axiosInstance.get(endpoint);
       
@@ -32,23 +36,39 @@ export const fetchAppointments = createAsyncThunk(
 // Book appointment
 export const bookAppointment = createAsyncThunk(
   'appointments/bookAppointment',
-  async ({ appointmentData, patientEmail, doctorEmail }, thunkAPI) => {
+  async ({ appointmentData,patientId }, thunkAPI) => {
     try {
       const appointmentId = Date.now().toString();
-      const cleanedPatientEmail = cleanEmail(patientEmail);
-      const cleanedDoctorEmail = cleanEmail(doctorEmail);
       
+       const doctorData = await getUserData(appointmentData.doctorId, 'doctor');
+      if (!doctorData) {
+        return thunkAPI.rejectWithValue('Doctor not found');
+      }
+      
+      // Get patient data from patients collection
+      const patientData = await getUserData(patientId, 'patient');
+      if (!patientData) {
+        return thunkAPI.rejectWithValue('Patient not found');
+      }
+
       const newAppointment = {
         ...appointmentData,
         id: appointmentId,
+        patientId,
+        patientEmail: patientData.email,
+        patientName: `${patientData.firstName} ${patientData.lastName}`,
+        doctorId: appointmentData.doctorId,
+        doctorEmail: doctorData.email,
+        doctorName: `${doctorData.firstName} ${doctorData.lastName}`,
         status: 'pending',
         createdAt: new Date().toISOString(),
       };
 
+
       // Save to both patient and doctor
       await Promise.all([
-        axiosInstance.put(`/appointments/patient/${cleanedPatientEmail}/${appointmentId}.json`, newAppointment),
-        axiosInstance.put(`/appointments/doctor/${cleanedDoctorEmail}/${appointmentId}.json`, newAppointment)
+        axiosInstance.put(`/appointments/patient/${patientId}/${appointmentId}.json`, newAppointment),
+        axiosInstance.put(`/appointments/doctor/${appointmentData.doctorId}/${appointmentId}.json`, newAppointment)
       ]);
 
       return newAppointment;
@@ -61,17 +81,13 @@ export const bookAppointment = createAsyncThunk(
 // Update appointment status
 export const updateAppointmentStatus = createAsyncThunk(
   'appointments/updateAppointmentStatus',
-  async ({ appointmentId, newStatus, appointment, userEmail }, thunkAPI) => {
+  async ({ appointmentId, newStatus, appointment}, thunkAPI) => {
     try {
-      const cleanedPatientEmail = cleanEmail(appointment.patientEmail);
-      const cleanedDoctorEmail = cleanEmail(appointment.doctorEmail || userEmail);
-
-      await Promise.all([
-        axiosInstance.patch(`/appointments/patient/${cleanedPatientEmail}/${appointmentId}.json`, 
+       await Promise.all([
+        axiosInstance.patch(`/appointments/patient/${appointment.patientId}/${appointmentId}.json`, 
           { status: newStatus }),
-        axiosInstance.patch(`/appointments/doctor/${cleanedDoctorEmail}/${appointmentId}.json`, 
-          { status: newStatus })
-      ]);
+        axiosInstance.patch(`/appointments/doctor/${appointment.doctorId}/${appointmentId}.json`, 
+          { status: newStatus })      ]);
 
       return { appointmentId, newStatus };
     } catch (error) {

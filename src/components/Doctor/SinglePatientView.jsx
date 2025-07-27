@@ -23,7 +23,7 @@ const SinglePatientView = () => {
   useEffect(() => {
     const fetchPatient = async () => {
       try {
-        const res = await axiosInstance.get(`/users/${id}.json`);
+        const res = await axiosInstance.get(`/patients/${id}.json`);
         setPatient(res.data);
       } catch (err) {
         console.error("Failed to load patient info", err);
@@ -32,11 +32,7 @@ const SinglePatientView = () => {
 
     const fetchHistory = async () => {
       try {
-        const userRes = await axiosInstance.get(`/users/${id}.json`);
-        if (!userRes.data || !userRes.data.email) return;
-
-        const cleanEmail = userRes.data.email.replace(/[@.]/g, "");
-        const res = await axiosInstance.get(`/history/${cleanEmail}.json`);
+        const res = await axiosInstance.get(`/history/${id}.json`);
 
         if (res.data) {
           const parsed = Object.entries(res.data).map(([hid, val]) => ({
@@ -52,7 +48,7 @@ const SinglePatientView = () => {
 
     const fetchDoctorInfo = async () => {
       try {
-        const res = await axiosInstance.get(`/users/${userId}.json`);
+        const res = await axiosInstance.get(`/doctors/${userId}.json`);
         if (res.data) {
           setDoctorInfo({
             name: `${res.data.firstName} ${res.data.lastName}`,
@@ -71,8 +67,7 @@ const SinglePatientView = () => {
 
   const handlePrescriptionSubmit = async (historyId) => {
     try {
-      const cleanEmail = patient.email.replace(/[@.]/g, "");
-      await axiosInstance.patch(`/history/${cleanEmail}/${historyId}.json`, {
+      await axiosInstance.patch(`/history/${id}/${historyId}.json`, {
         prescription: {
           ...prescriptionData,
           addedAt: new Date().toISOString(),
@@ -82,7 +77,7 @@ const SinglePatientView = () => {
       setShowPrescriptionModal(null);
       setPrescriptionData({ drug: "", time: "", meal: "After Meal" });
 
-      const res = await axiosInstance.get(`/history/${cleanEmail}.json`);
+      const res = await axiosInstance.get(`/history/${id}.json`);
       if (res.data) {
         const parsed = Object.entries(res.data).map(([hid, val]) => ({
           id: hid,

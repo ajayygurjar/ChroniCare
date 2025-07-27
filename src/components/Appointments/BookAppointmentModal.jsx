@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { Modal, Form, Button } from 'react-bootstrap';
 
-const BookAppointmentModal = ({ show, onHide, doctors, onBook }) => {
+const BookAppointmentModal = ({ show, onHide, doctors, onBook,selectedDate }) => {
   const [formData, setFormData] = useState({
     doctorId: '',
     doctorName: '',
@@ -10,7 +10,14 @@ const BookAppointmentModal = ({ show, onHide, doctors, onBook }) => {
     reason: '',
     patientName: ''
   });
-
+ useEffect(() => {
+    if (selectedDate) {
+      setFormData(prev => ({
+        ...prev,
+        date: selectedDate.toISOString().split('T')[0]
+      }));
+    }
+  }, [selectedDate]);
   const timeSlots = [
     '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
     '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'
@@ -25,7 +32,6 @@ const BookAppointmentModal = ({ show, onHide, doctors, onBook }) => {
         ...prev,
         [name]: value,
         doctorName: selectedDoctor ? `${selectedDoctor.firstName} ${selectedDoctor.lastName}` : '',
-        doctorEmail: selectedDoctor ? selectedDoctor.email : ''
       }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));

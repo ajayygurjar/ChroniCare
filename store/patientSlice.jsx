@@ -7,23 +7,19 @@ export const fetchPatientData=createAsyncThunk(
     async (uid,thunkAPI)=>{
         try {
             
-            const [profileRes,historyRes,presRes]=await Promise.all([
-                axiosInstance.get(`/users/${uid}.json`),
-                axiosInstance.get(`/history/${uid}.json`),
+            const [profileRes,historyRes,]=await Promise.all([
+                
                 axiosInstance.get(`/patients/${uid}.json`),
+                axiosInstance.get(`/history/${uid}.json`),
             ])
 
             const history = historyRes.data
         ? Object.entries(historyRes.data).map(([id, val]) => ({ id, ...val }))
         : [];
-
-      const prescriptions = presRes.data
-        ? Object.entries(presRes.data).map(([id, val]) => ({ id, ...val }))
-        : [];
         return {
             profile:profileRes.data,
             history,
-            prescriptions,
+            prescriptions:[],
         }
         } catch (error) {
             return thunkAPI.rejectWithValue(error.message)

@@ -5,12 +5,10 @@ export const fetchAllPatients = createAsyncThunk(
   'doctor/fetchAllPatients',
   async (_, thunkAPI) => {
     try {
-      const res = await axiosInstance.get('/users.json');
+      const res = await axiosInstance.get('/patients.json');
       const users = res.data || {};
 
       const filtered = Object.entries(users)
-        // eslint-disable-next-line no-unused-vars
-        .filter(([_, user]) => user.role === 'patient')
         .map(([id, user]) => ({ id, ...user }));
 
       return filtered;

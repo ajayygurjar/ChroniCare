@@ -5,13 +5,12 @@ import { useSelector } from "react-redux";
 import AddRecordModal from "./AddRecordModal";
 import HistoryTable from "./HistoryTable";
 
-const cleanEmail = (email) => email.replace(/[@.]/g, "");
+
 const PatientHistory = ({ viewUserId }) => {
-  const { user, userId } = useSelector((state) => state.auth);
+  const { userId } = useSelector((state) => state.auth);
   const isDoctor = !!viewUserId;
 
   const currentUserId = isDoctor ? viewUserId : userId;
-  const currentUserEmail = isDoctor ? null : user;
 
   const [history, setHistory] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -21,17 +20,9 @@ const PatientHistory = ({ viewUserId }) => {
 
   const fetchHistory = async () => {
     try {
-      let cleanedKey = "";
+        
 
-      if (isDoctor) {
-        const userRes = await axiosInstance.get(`/users/${viewUserId}.json`);
-        if (!userRes.data || !userRes.data.email) return;
-        cleanedKey = cleanEmail(userRes.data.email);
-      } else {
-        cleanedKey = cleanEmail(currentUserEmail);
-      }
-
-      const res = await axiosInstance.get(`/history/${cleanedKey}.json`);
+      const res = await axiosInstance.get(`/history/${currentUserId}.json`);
       if (res.data) {
         const parsed = Object.entries(res.data).map(([id, val]) => ({
           id,
@@ -48,7 +39,7 @@ const PatientHistory = ({ viewUserId }) => {
 
   const fetchDoctorInfo = async () => {
     try {
-      const res = await axiosInstance.get(`/users/${userId}.json`);
+      const res = await axiosInstance.get(`/doctors/${userId}.json`);
       if (res.data) {
         setDoctorInfo({
           name: `${res.data.firstName} ${res.data.lastName}`,
@@ -63,20 +54,18 @@ const PatientHistory = ({ viewUserId }) => {
   useEffect(() => {
     if (currentUserId) fetchHistory();
     if (isDoctor) fetchDoctorInfo();
-  }, [currentUserId, isDoctor, currentUserEmail, viewUserId, userId]);
+  }, [currentUserId, isDoctor,userId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentUserEmail) return;
+    if (!currentUserId) return;
 
     const newHistory = {
       diagnosis: formData.diagnosis,
       notes: formData.notes,
       date: new Date().toISOString(),
     };
-
-    const cleanedEmail = cleanEmail(currentUserEmail);
-    await axiosInstance.post(`/history/${cleanedEmail}.json`, newHistory);
+    await axiosInstance.post(`/history/${currentUserId}.json`, newHistory);
 
     setFormData({ diagnosis: "", notes: "", file: null });
     setShowModal(false);
@@ -87,11 +76,7 @@ const PatientHistory = ({ viewUserId }) => {
     const item = prescriptionForm[itemId];
     if (!item) return;
 
-    const userRes = await axiosInstance.get(`/users/${viewUserId}.json`);
-    if (!userRes.data || !userRes.data.email) return;
-    const cleanedKey = cleanEmail(userRes.data.email);
-
-    await axiosInstance.patch(`/history/${cleanedKey}/${itemId}.json`, {
+    await axiosInstance.patch(`/history/${viewUserId}/${itemId}.json`, {
       prescription: {
         drug: item.drug,
         time: item.time,
