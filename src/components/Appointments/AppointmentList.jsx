@@ -20,10 +20,14 @@ const AppointmentList = ({ appointments, loading, role, onStatusUpdate }) => {
     );
   }
 
-  if (appointments.length === 0) {
+  if (!appointments ||appointments.length === 0) {
     return (
       <div className="text-center p-3 text-muted">
-        No appointments found
+       <div className="mb-2">📅</div> 
+        <div>No appointments found</div>
+        {role === 'patient' && (
+          <small>Click "Book New Appointment" to schedule your first appointment</small>
+        )}
       </div>
     );
   }
