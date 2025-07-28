@@ -59,14 +59,9 @@ const PatientDashboard = () => {
       buttonProps: { as: Link, to: "/patient/history", variant: "success" }
     },
     {
-      icon: "💊",
-      label: "Prescriptions",
-      buttonProps: {  as: Link, to: "/patient/prescriptions", variant: "info" }
-    },
-    {
       icon: "📞",
       label: "Contact",
-      buttonProps: { variant: "warning" }
+      buttonProps: {  as: Link, to: "/contact", variant: "warning" }
     }
   ];
 
