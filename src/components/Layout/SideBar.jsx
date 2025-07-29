@@ -26,13 +26,13 @@ const Sidebar = ({ role }) => {
     <div
       style={{
         width: "220px",
-        height: "100vh",
+        height: "140vh",
         padding: "1.5rem",
         background: "#f8f9fa",
-        borderRight: "1px solid #dee2e6",
+        borderRight: "3px solid #dee2e6",
       }}
     >
-      <h5 className="mb-4">
+      <h5 className="mb-4" bg='primary'>
         {role === "doctor" ? "Doctor Panel" : "Patient Panel"}
       </h5>
 

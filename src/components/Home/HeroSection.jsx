@@ -46,7 +46,7 @@ const HeroSection = ({ onWatchDemo, stats }) => (
                 boxShadow: "0 10px 30px rgba(240, 147, 251, 0.4)"
               }}
             >
-              Get Started Free ✨
+              Get Started Free 
             </Button>
             <Button
               variant="outline-light"
