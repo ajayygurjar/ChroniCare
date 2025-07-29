@@ -29,7 +29,7 @@ const CTASection = () => (
               fontWeight: "600",
             }}
           >
-            Start Your Journey 🚀
+            Start Your Journey 
           </Button>
           <Button
             variant="outline-light"
