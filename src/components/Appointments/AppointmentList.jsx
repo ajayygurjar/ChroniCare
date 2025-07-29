@@ -1,5 +1,6 @@
 import React from 'react';
-import { ListGroup, Badge, Button, Spinner } from 'react-bootstrap';
+import { ListGroup, Badge, Button, } from 'react-bootstrap';
+import LoadingSpinner from '../Common/LoadingSpinner';
 
 const AppointmentList = ({ appointments, loading, role, onStatusUpdate }) => {
   const getStatusColor = (status) => {
@@ -15,7 +16,7 @@ const AppointmentList = ({ appointments, loading, role, onStatusUpdate }) => {
   if (loading) {
     return (
       <div className="text-center p-3">
-        <Spinner animation="border" />
+        <LoadingSpinner message="Loading appointments..." centered={false} />
       </div>
     );
   }

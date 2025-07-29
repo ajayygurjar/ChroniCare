@@ -3,7 +3,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { rehydrateUser } from "../store/authSlice";
 import RootLayout from "./components/Layout/RootLayout";
-import Loader from "./components/UI/Loader";
+import LoadingSpinner from "./components/Common/LoadingSpinner";
 import ContactPage from "./Pages/ContactPage";
 
 //lazy loading
@@ -75,7 +75,7 @@ const App = () => {
   ]);
   return (
     <>
-      <Suspense fallback={<Loader />}>
+      <Suspense fallback={<LoadingSpinner message="Loading application..." />}>
         <RouterProvider router={router} />
       </Suspense>
     </>
