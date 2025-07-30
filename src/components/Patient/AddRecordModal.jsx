@@ -1,8 +1,20 @@
+import { Modal, Form, Button } from "react-bootstrap";
 
-import { Modal, Form, Button } from 'react-bootstrap';
-
-const AddRecordModal = ({ show, onHide, formData, setFormData, handleSubmit, handleFileChange }) => (
-  <Modal show={show} onHide={onHide}>
+const AddRecordModal = ({
+  show,
+  onHide,
+  formData,
+  setFormData,
+  handleSubmit,
+  handleFileChange,
+}) => (
+  <Modal
+    show={show}
+    onHide={onHide}
+    centered
+    dialogClassName="mobile-modal"
+    contentClassName="p-3"
+  >
     <Modal.Header closeButton>
       <Modal.Title>Add Diagnosis Record</Modal.Title>
     </Modal.Header>
@@ -13,7 +25,9 @@ const AddRecordModal = ({ show, onHide, formData, setFormData, handleSubmit, han
           <Form.Control
             type="text"
             value={formData.diagnosis}
-            onChange={(e) => setFormData({ ...formData, diagnosis: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, diagnosis: e.target.value })
+            }
             required
           />
         </Form.Group>
@@ -22,7 +36,9 @@ const AddRecordModal = ({ show, onHide, formData, setFormData, handleSubmit, han
           <Form.Control
             as="textarea"
             value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, notes: e.target.value })
+            }
             required
           />
         </Form.Group>
@@ -30,7 +46,9 @@ const AddRecordModal = ({ show, onHide, formData, setFormData, handleSubmit, han
           <Form.Label>Upload Report (optional)</Form.Label>
           <Form.Control type="file" onChange={handleFileChange} />
         </Form.Group>
+        <div className="d-grid">
         <Button type="submit">Save Record</Button>
+        </div>
       </Form>
     </Modal.Body>
   </Modal>

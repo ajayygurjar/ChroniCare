@@ -11,8 +11,9 @@ const AuthPage = () => {
   };
 
   return (
-    <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}>
-      <Card style={{ width: "100%", maxWidth: "500px", padding: "2rem" }}>
+    <Container className="d-flex justify-content-center align-items-center px-3" 
+    style={{ minHeight: "100vh" }}>
+      <Card style={{ width: "100%", maxWidth: "500px", padding: "2rem" }} className="shadow-sm">
         {isLoginMode ? <LoginForm /> : <SignupForm />}
 
         <div className="text-center mt-3">

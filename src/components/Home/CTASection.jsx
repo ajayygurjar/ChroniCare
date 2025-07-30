@@ -17,11 +17,12 @@ const CTASection = () => (
           <p className="lead mb-4">
             Join thousands of patients and healthcare providers who trust ChroniCare
           </p>
+           <div className="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3">
           <Button
             as={Link}
             to="/auth"
             size="lg"
-            className="px-5 py-3 me-3"
+            className="px-5 py-3  w-100 w-md-auto"
             style={{
               background: "linear-gradient(45deg, #f093fb 0%, #f5576c 100%)",
               border: "none",
@@ -34,11 +35,12 @@ const CTASection = () => (
           <Button
             variant="outline-light"
             size="lg"
-            className="px-5 py-3"
+            className="px-5 py-3 w-100 w-md-auto"
             style={{ borderRadius: "50px", fontWeight: "600" }}
           >
             Contact Sales 💬
           </Button>
+          </div>
         </Col>
       </Row>
     </Container>

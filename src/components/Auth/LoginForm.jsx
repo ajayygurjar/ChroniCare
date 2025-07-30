@@ -1,5 +1,4 @@
-
-import { Form, Button,Spinner,Alert } from "react-bootstrap";
+import { Form, Button, Spinner, Alert } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { loginWithRole } from "../../../store/authSlice";
@@ -41,6 +40,7 @@ const LoginForm = () => {
 
   return (
     <Form
+      className="px-3 w-100"
       style={{ maxWidth: "400px", margin: "0 auto" }}
       onSubmit={handleSubmit}
     >
@@ -87,7 +87,7 @@ const LoginForm = () => {
 
       <div className="d-grid">
         <Button variant="primary" type="submit" disabled={isLoading}>
-            {isLoading ? <Spinner animation="border" size="sm" /> : "Login"}
+          {isLoading ? <Spinner animation="border" size="sm" /> : "Login"}
         </Button>
       </div>
     </Form>

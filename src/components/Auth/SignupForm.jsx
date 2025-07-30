@@ -72,6 +72,7 @@ const SignupForm = () => {
   return (
     <Form
       style={{ maxWidth: "500px", margin: "0 auto" }}
+      className="px-3 w-100"
       onSubmit={handleSubmit}
     >
       <h2 className="mb-4 text-center">Create Account</h2>
@@ -199,7 +200,7 @@ const SignupForm = () => {
         </Form.Select>
       </Form.Group>
 
-        {formData.role === "doctor" && (
+      {formData.role === "doctor" && (
         <>
           <Form.Group className="mb-3" controlId="speciality">
             <Form.Label>Speciality</Form.Label>
