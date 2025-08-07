@@ -16,7 +16,7 @@
 **Alternative Link:** [chronicare-ffd95.firebaseapp.com](https://chronicare-ffd95.firebaseapp.com/)
 
 ### 🎥 **Watch Demo Video**
-**[📹 Demo Video - Coming Soon!](#)**
+**[📹 Watch Full Demo (8 mins)](https://www.loom.com/share/91a6872c5bd64d3ea6c68ea0971aab65)**
 
 ---
 

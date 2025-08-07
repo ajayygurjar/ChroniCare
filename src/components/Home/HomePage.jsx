@@ -101,7 +101,7 @@ const HomePage = () => {
 
   return (
     <>
-      <HeroSection stats={stats} onWatchDemo={() => setShowVideoModal(true)} />
+      <HeroSection stats={stats} />
 
       <Suspense fallback={<div className="text-center my-5">Loading features...</div>}>
         <FeaturesSection features={features} />
