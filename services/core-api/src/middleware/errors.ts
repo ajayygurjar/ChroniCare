@@ -6,6 +6,7 @@ export class HttpError extends Error {
     public readonly status: number,
     public readonly code: string,
     message: string,
+    public readonly details?: unknown,
   ) {
     super(message);
     this.name = 'HttpError';
@@ -27,7 +28,7 @@ export const notFound: RequestHandler = (req, _res, next) => {
   next(new HttpError(404, 'not_found', `No route for ${req.method} ${req.path}`));
 };
 
-// One error shape for every failure: { error: { code, message, requestId } }.
+// One error shape for every failure: { error: { code, message, requestId, details? } }.
 // Server errors never leak their message or stack to the client; they are logged with the request id.
 export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   const status =
@@ -46,6 +47,7 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
       code: err instanceof HttpError ? err.code : (CODE_BY_STATUS[status] ?? (status >= 500 ? 'internal_error' : 'error')),
       message: status >= 500 ? 'Internal server error' : err instanceof Error ? err.message : 'Request failed',
       requestId: req.id,
+      ...(err instanceof HttpError && err.details !== undefined ? { details: err.details } : {}),
     },
   });
 };

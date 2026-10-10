@@ -1,19 +1,30 @@
-import express from 'express';
+import cookieParser from 'cookie-parser';
+import express, { Router } from 'express';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
+import type { AppConfig } from './config/env.js';
 import type { Logger } from './lib/logger.js';
+import type { PrismaClient } from './lib/prisma.js';
 import { genReqId } from './lib/request-id.js';
+import type { TokenService } from './lib/tokens.js';
 import { errorHandler, notFound } from './middleware/errors.js';
-import { healthRouter, type Database } from './routes/health.js';
+import { authRouter } from './modules/auth/routes.js';
+import { healthRouter } from './routes/health.js';
 
 export interface AppDeps {
-  prisma: Database;
+  prisma: PrismaClient;
   logger: Logger;
+  tokens: TokenService;
+  config: AppConfig;
 }
 
-// The app is built from its dependencies (no globals), so tests can pass a fake database.
-export function createApp({ prisma, logger }: AppDeps): express.Express {
+// The app is built from its dependencies (no globals), so tests can pass their own.
+export function createApp(deps: AppDeps): express.Express {
+  const { prisma, logger, tokens, config } = deps;
   const app = express();
+
+  // Behind a gateway or load balancer, trust its X-Forwarded-* headers so client IPs (rate limits, logs) are right.
+  if (config.trustProxy > 0) app.set('trust proxy', config.trustProxy);
 
   app.use(
     pinoHttp({
@@ -29,9 +40,19 @@ export function createApp({ prisma, logger }: AppDeps): express.Express {
   );
   app.use(helmet());
   app.use(express.json({ limit: '100kb' }));
+  app.use(cookieParser());
 
   app.use(healthRouter({ prisma }));
-  // Feature routers (auth, appointments, history, prescriptions) mount under /api in Phase 1.
+
+  // Public key for verifying access tokens (used by other services).
+  app.get('/.well-known/jwks.json', async (_req, res) => {
+    res.set('Cache-Control', 'public, max-age=300').json(await tokens.jwks());
+  });
+
+  const modules = { prisma, tokens, config };
+  const api = Router();
+  api.use('/auth', authRouter(modules));
+  app.use('/api', api);
 
   app.use(notFound);
   app.use(errorHandler);

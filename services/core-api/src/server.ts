@@ -1,12 +1,19 @@
 import { createApp } from './app.js';
-import { loadEnv } from './config/env.js';
+import { buildConfig, loadEnv } from './config/env.js';
 import { createLogger } from './lib/logger.js';
 import { createPrisma } from './lib/prisma.js';
+import { createTokenService } from './lib/tokens.js';
 
 const env = loadEnv();
 const logger = createLogger(env);
 const prisma = createPrisma(env.DATABASE_URL);
-const app = createApp({ prisma, logger });
+const config = buildConfig(env);
+const tokens = await createTokenService({ privateKeyPem: env.JWT_PRIVATE_KEY, ttlSeconds: config.accessTokenTtlSeconds });
+if (tokens.ephemeral) {
+  logger.warn('JWT_PRIVATE_KEY is not set: using a throwaway signing key. Fine for development; sessions refresh themselves after a restart.');
+}
+
+const app = createApp({ prisma, logger, tokens, config });
 
 const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, 'core-api listening');
