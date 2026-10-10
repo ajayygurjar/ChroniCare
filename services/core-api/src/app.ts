@@ -8,7 +8,11 @@ import type { PrismaClient } from './lib/prisma.js';
 import { genReqId } from './lib/request-id.js';
 import type { TokenService } from './lib/tokens.js';
 import { errorHandler, notFound } from './middleware/errors.js';
+import { appointmentsRouter } from './modules/appointments/routes.js';
 import { authRouter } from './modules/auth/routes.js';
+import { doctorsRouter } from './modules/doctors/routes.js';
+import { historyRouter } from './modules/history/routes.js';
+import { patientsRouter } from './modules/patients/routes.js';
 import { healthRouter } from './routes/health.js';
 
 export interface AppDeps {
@@ -52,6 +56,10 @@ export function createApp(deps: AppDeps): express.Express {
   const modules = { prisma, tokens, config };
   const api = Router();
   api.use('/auth', authRouter(modules));
+  api.use('/doctors', doctorsRouter(modules));
+  api.use('/patients', patientsRouter(modules));
+  api.use('/appointments', appointmentsRouter(modules));
+  api.use('/history', historyRouter(modules));
   app.use('/api', api);
 
   app.use(notFound);
