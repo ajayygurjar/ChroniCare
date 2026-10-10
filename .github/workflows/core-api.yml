@@ -1,0 +1,59 @@
+name: core-api
+
+on:
+  pull_request:
+    paths:
+      - "services/core-api/**"
+      - ".github/workflows/core-api.yml"
+  push:
+    branches: [main]
+    paths:
+      - "services/core-api/**"
+      - ".github/workflows/core-api.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # A throwaway database for this run. Actions sets CI=true, which lets the test setup use
+      # DATABASE_URL directly (locally it insists on a separate TEST_DATABASE_URL).
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    defaults:
+      run:
+        working-directory: services/core-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/core-api/package-lock.json
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+      - run: npm test
+
+  # Proves the Dockerfile builds. Nothing is pushed anywhere yet: there is no deploy target.
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --tag chronicare/core-api:ci services/core-api
