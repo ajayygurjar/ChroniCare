@@ -1,0 +1,10 @@
+# Dependencies and build output
+node_modules
+/dist
+/coverage
+
+# Prisma client: generated from prisma/schema.prisma by `npm run db:generate` (and by `npm run build`)
+/src/generated
+
+# Local configuration (copy .env.example)
+.env
