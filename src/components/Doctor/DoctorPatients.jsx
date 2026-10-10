@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { LuSearch, LuChevronRight, LuUsers } from "react-icons/lu";
 import { fetchAllPatients } from "../../../store/doctorSlice";
-import { useNavigate } from "react-router-dom";
+import PageHeader from "../Common/PageHeader";
+import Avatar from "../Common/Avatar";
+import EmptyState from "../Common/EmptyState";
+import LoadingSpinner from "../Common/LoadingSpinner";
+import { fullName } from "../../../utils/format";
 
 const DoctorPatients = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { patients, loading } = useSelector((state) => state.doctor);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -13,44 +18,58 @@ const DoctorPatients = () => {
     dispatch(fetchAllPatients());
   }, [dispatch]);
 
-  const filtered = patients.filter((p) => {
-    const query = searchTerm.toLowerCase();
-    return (
-      p.firstName?.toLowerCase().includes(query) ||
-      p.lastName?.toLowerCase().includes(query) ||
+  const query = searchTerm.trim().toLowerCase();
+  const filtered = patients.filter(
+    (p) =>
+      fullName(p).toLowerCase().includes(query) ||
       p.address?.toLowerCase().includes(query) ||
       p.age?.toString().includes(query)
-    );
-  });
+  );
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h2>Patient List</h2>
-      <input
-        className="form-control mb-3"
-        placeholder="Search by name, address, or age"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
+    <>
+      <PageHeader
+        title="Patients"
+        subtitle={`${patients.length} ${patients.length === 1 ? "patient" : "patients"}`}
       />
-      {loading ? (
-        <p>Loading...</p>
-      ) : filtered.length > 0 ? (
-        <ul className="list-group">
-          {filtered.map((p) => (
-            <li
-              key={p.id}
-              className="list-group-item list-group-item-action"
-              style={{ cursor: "pointer" }}
-              onClick={() => navigate(`/doctor/patient/${p.id}`)}
-            >
-              {p.firstName} {p.lastName} ({p.age} yrs, {p.address})
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No matching patients found.</p>
-      )}
-    </div>
+
+      <div className="cc-search">
+        <LuSearch aria-hidden="true" />
+        <input
+          type="search"
+          className="form-control"
+          placeholder="Search by name, address or age"
+          aria-label="Search patients"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
+      <div className="cc-card" style={{ paddingTop: 6, paddingBottom: 6 }}>
+        {loading && patients.length === 0 ? (
+          <LoadingSpinner message="Loading patients..." />
+        ) : filtered.length > 0 ? (
+          <ul className="cc-list">
+            {filtered.map((p) => (
+              <li key={p.id}>
+                <Link to={`/doctor/patient/${p.id}`} className="cc-li">
+                  <Avatar name={fullName(p)} />
+                  <div className="cc-li-body">
+                    <span className="cc-li-title">{fullName(p)}</span>
+                    <div className="cc-sub">
+                      {[p.age, p.gender, p.address].filter(Boolean).join(" · ")}
+                    </div>
+                  </div>
+                  <LuChevronRight className="cc-chev" aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState icon={LuUsers} message="No matching patients found." />
+        )}
+      </div>
+    </>
   );
 };
 

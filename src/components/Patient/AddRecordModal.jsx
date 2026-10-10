@@ -1,4 +1,4 @@
-import { Modal, Form, Button } from "react-bootstrap";
+import { Modal, Form, Button, Alert } from "react-bootstrap";
 
 const AddRecordModal = ({
   show,
@@ -6,21 +6,19 @@ const AddRecordModal = ({
   formData,
   setFormData,
   handleSubmit,
-  handleFileChange,
+  saving,
+  error,
 }) => (
-  <Modal
-    show={show}
-    onHide={onHide}
-    centered
-    dialogClassName="mobile-modal"
-    contentClassName="p-3"
-  >
+  <Modal show={show} onHide={onHide} centered>
     <Modal.Header closeButton>
-      <Modal.Title>Add Diagnosis Record</Modal.Title>
+      <Modal.Title as="h2" style={{ fontSize: "1.3125rem" }}>
+        Add record
+      </Modal.Title>
     </Modal.Header>
-    <Modal.Body>
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3">
+    <Form onSubmit={handleSubmit}>
+      <Modal.Body>
+        {error && <Alert variant="danger">{error}</Alert>}
+        <Form.Group className="mb-3 mt-2" controlId="record-diagnosis">
           <Form.Label>Diagnosis</Form.Label>
           <Form.Control
             type="text"
@@ -31,10 +29,11 @@ const AddRecordModal = ({
             required
           />
         </Form.Group>
-        <Form.Group className="mb-3">
+        <Form.Group className="mb-3" controlId="record-notes">
           <Form.Label>Notes</Form.Label>
           <Form.Control
             as="textarea"
+            rows={4}
             value={formData.notes}
             onChange={(e) =>
               setFormData({ ...formData, notes: e.target.value })
@@ -42,15 +41,16 @@ const AddRecordModal = ({
             required
           />
         </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Upload Report (optional)</Form.Label>
-          <Form.Control type="file" onChange={handleFileChange} />
-        </Form.Group>
-        <div className="d-grid">
-        <Button type="submit">Save Record</Button>
-        </div>
-      </Form>
-    </Modal.Body>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="ghost" onClick={onHide}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={saving}>
+          {saving ? "Saving…" : "Save record"}
+        </Button>
+      </Modal.Footer>
+    </Form>
   </Modal>
 );
 

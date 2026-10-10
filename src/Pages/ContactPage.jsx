@@ -1,125 +1,122 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Form, Button, Alert } from 'react-bootstrap';
+import { useSelector } from 'react-redux';
+import { LuMail, LuPhone, LuMapPin, LuClock, LuSend, LuTriangleAlert } from 'react-icons/lu';
+import PageHeader from '../components/Common/PageHeader';
+
+const SUPPORT_EMAIL = 'support@chronicare.com';
 
 const ContactPage = () => {
+  const { token } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
-  const [showAlert, setShowAlert] = useState(false);
-
-  useEffect(() => {
-    if (showAlert) {
-      const timer = setTimeout(() => setShowAlert(false), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [showAlert]);
+  const [opened, setOpened] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // There is no message backend, so hand the message to the visitor's email app
+  // instead of pretending it was sent.
   const handleSubmit = (e) => {
     e.preventDefault();
-    setShowAlert(true);
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    const subject = `[${formData.subject}] Message from ${formData.name}`;
+    const body = `${formData.message}\n\n${formData.name}\n${formData.email}`;
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setOpened(true);
   };
 
   return (
-    <Container className="mt-4">
-      <Row className="mb-4 text-center">
-        <Col>
-          <h1>📞 Contact Us</h1>
-          <p className="text-muted">We’re here to help. Reach out anytime.</p>
-        </Col>
-      </Row>
+    <div className={token ? 'cc-narrow' : 'cc-section cc-narrow'}>
+      <PageHeader title="Contact us" subtitle="We're here to help. Reach out anytime." />
 
-      {showAlert && <Alert variant="success">✅ Message sent successfully!</Alert>}
+      {opened && (
+        <Alert variant="success">
+          Your email app should open with the message ready to send. If it didn't, write to{' '}
+          <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>.
+        </Alert>
+      )}
 
-      <Row>
-        <Col lg={8}>
-          <Card>
-            <Card.Header className="bg-primary text-white">📧 Get in Touch</Card.Header>
-            <Card.Body>
-              <Form onSubmit={handleSubmit}>
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Control
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        placeholder="Full Name"
-                        required
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Control
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="Email"
-                        required
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
+      <div className="cc-grid g32 top">
+        <div className="cc-card">
+          <div className="cc-eyebrow">Get in touch</div>
+          <Form onSubmit={handleSubmit}>
+            <div className="row g-3 mb-3">
+              <Form.Group className="col-md-6" controlId="contact-name">
+                <Form.Label>Full name</Form.Label>
+                <Form.Control type="text" name="name" value={formData.name} onChange={handleChange} autoComplete="name" required />
+              </Form.Group>
+              <Form.Group className="col-md-6" controlId="contact-email">
+                <Form.Label>Email</Form.Label>
+                <Form.Control type="email" name="email" value={formData.email} onChange={handleChange} autoComplete="email" required />
+              </Form.Group>
+            </div>
 
-                <Form.Group className="mb-3">
-                  <Form.Select name="subject" value={formData.subject} onChange={handleChange} required>
-                    <option value="">Select Subject</option>
-                    <option>General Inquiry</option>
-                    <option>Technical Support</option>
-                    <option>Appointment Help</option>
-                    <option>Billing</option>
-                    <option>Feedback</option>
-                    <option>Other</option>
-                  </Form.Select>
-                </Form.Group>
+            <Form.Group className="mb-3" controlId="contact-subject">
+              <Form.Label>Subject</Form.Label>
+              <Form.Select name="subject" value={formData.subject} onChange={handleChange} required>
+                <option value="">Select a subject</option>
+                <option>General Inquiry</option>
+                <option>Technical Support</option>
+                <option>Appointment Help</option>
+                <option>Billing</option>
+                <option>Feedback</option>
+                <option>Other</option>
+              </Form.Select>
+            </Form.Group>
 
-                <Form.Group className="mb-4">
-                  <Form.Control
-                    as="textarea"
-                    rows={4}
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    placeholder="Your message..."
-                    required
-                  />
-                </Form.Group>
+            <Form.Group className="mb-4" controlId="contact-message">
+              <Form.Label>Message</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={5}
+                name="message"
+                value={formData.message}
+                onChange={handleChange}
+                placeholder="How can we help?"
+                required
+              />
+            </Form.Group>
 
-                <Button type="submit" variant="primary" className="w-100">
-                  📤 Send Message
-                </Button>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
+            <Button type="submit" size="lg">
+              <LuSend aria-hidden="true" /> Send message
+            </Button>
+          </Form>
+        </div>
 
-        <Col lg={4}>
-          <Card>
-            <Card.Header className="bg-success text-white">📍 Contact Info</Card.Header>
-            <Card.Body>
-              <p><strong>ChroniCare Healthcare</strong></p>
-              <p>Email: <a href="mailto:support@chronicare.com">support@chronicare.com</a></p>
-              <p>Phone: <a href="tel:+1234567890">+1 (234) 567-8900</a></p>
-              <p>Address: 123 Healthcare Ave, City, State</p>
-              <p>Hours: Mon–Fri 8AM–6PM, Sat 9AM–4PM</p>
-            </Card.Body>
-          </Card>
+        <div className="cc-stack">
+          <div className="cc-card">
+            <div className="cc-eyebrow">Contact info</div>
+            <p className="mb-3"><b>ChroniCare Healthcare</b></p>
+            <ul className="cc-list">
+              <li className="cc-li">
+                <LuMail className="cc-chev" aria-hidden="true" />
+                <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
+              </li>
+              <li className="cc-li">
+                <LuPhone className="cc-chev" aria-hidden="true" />
+                <a href="tel:+1234567890">+1 (234) 567-8900</a>
+              </li>
+              <li className="cc-li">
+                <LuMapPin className="cc-chev" aria-hidden="true" />
+                <span>123 Healthcare Ave, City, State</span>
+              </li>
+              <li className="cc-li">
+                <LuClock className="cc-chev" aria-hidden="true" />
+                <span>Mon–Fri 8AM–6PM, Sat 9AM–4PM</span>
+              </li>
+            </ul>
+          </div>
 
-          <Card className="mt-3 border-danger">
-            <Card.Header className="bg-danger text-white">🚨 Emergency</Card.Header>
-            <Card.Body>
-              <p>For emergencies, call:</p>
-              <h4><a href="tel:911" className="text-danger">911</a></h4>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+          <div className="cc-card" style={{ background: 'var(--cc-no-bg)', borderColor: '#EFC3BD' }}>
+            <div className="cc-eyebrow" style={{ color: 'var(--cc-no-fg)', display: 'flex', gap: 6, alignItems: 'center' }}>
+              <LuTriangleAlert aria-hidden="true" /> Emergency
+            </div>
+            <p className="mb-1">For emergencies, call:</p>
+            <a href="tel:911" className="h2 mb-0" style={{ color: 'var(--cc-no-fg)', textDecoration: 'none' }}>911</a>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -1,55 +1,54 @@
-import React from 'react';
-import { Card, Badge, Button, Stack } from 'react-bootstrap';
+import { LuCalendarDays } from 'react-icons/lu';
+import StatusChip from './StatusChip';
+import EmptyState from './EmptyState';
+import {
+  parseLocalDate,
+  formatTime,
+  counterpartName,
+} from '../../../utils/format';
 
+// Highlights one appointment: date block, who, when, why, status.
 const AppointmentCard = ({
   title,
   appointment,
+  role,
   emptyMessage,
   emptyAction,
-  icon = "📅"
+  children,
 }) => {
-  const formatDate = (date) =>
-    new Date(date).toLocaleDateString('en-US', {
-      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-    });
-
-  const getStatusVariant = (status) => ({
-    confirmed: 'success',
-    pending: 'warning',
-    cancelled: 'danger'
-  }[status] || 'secondary');
+  const day = appointment ? parseLocalDate(appointment.date) : null;
 
   return (
-    <Card className="h-100 shadow-sm">
-      <Card.Header className="bg-light">
-        <Stack direction="horizontal" gap={2}>
-          <span style={{ fontSize: '1.25rem' }}>{icon}</span>
-          <h5 className="mb-0">{title}</h5>
-        </Stack>
-      </Card.Header>
-      <Card.Body>
-        {appointment ? (
-          <Stack gap={2}>
-            <div><strong>Name:</strong> {appointment.doctorName || appointment.patientName}</div>
-            <div><strong>Date:</strong> {formatDate(appointment.date)}</div>
-            {appointment.time && <div><strong>Time:</strong> {appointment.time}</div>}
-            {appointment.reason && <div><strong>Reason:</strong> {appointment.reason}</div>}
-            {appointment.department && <div><strong>Department:</strong> {appointment.department}</div>}
-            <Badge bg={getStatusVariant(appointment.status)} className="align-self-start">
-              {appointment.status?.[0].toUpperCase() + appointment.status?.slice(1)}
-            </Badge>
-          </Stack>
-        ) : (
-          <div className="text-center text-muted py-4">
-            <div style={{ fontSize: '3rem', opacity: 0.3 }}>{icon}</div>
-            <p>{emptyMessage}</p>
-            {emptyAction && (
-              <Button {...emptyAction.buttonProps}>{emptyAction.label}</Button>
-            )}
+    <div className="cc-card">
+      <div className="cc-eyebrow">{title}</div>
+      {appointment && day ? (
+        <>
+          <div className="cc-appt">
+            <div className="cc-datebox">
+              <b>{day.getDate()}</b>
+              <span>
+                {day.toLocaleDateString('en-US', { weekday: 'short' })} ·{' '}
+                {day.toLocaleDateString('en-US', { month: 'short' })}
+              </span>
+            </div>
+            <div className="cc-li-body">
+              <h3 style={{ marginBottom: 2 }}>{counterpartName(appointment, role)}</h3>
+              <div className="cc-sub">
+                {day.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                {appointment.time && ` · ${formatTime(appointment.time)}`}
+              </div>
+              {appointment.reason && <div style={{ marginTop: 4 }}>{appointment.reason}</div>}
+            </div>
+            <StatusChip status={appointment.status} />
           </div>
-        )}
-      </Card.Body>
-    </Card>
+          {children}
+        </>
+      ) : (
+        <EmptyState icon={LuCalendarDays} message={emptyMessage}>
+          {emptyAction}
+        </EmptyState>
+      )}
+    </div>
   );
 };
 

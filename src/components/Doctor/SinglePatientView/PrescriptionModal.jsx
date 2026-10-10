@@ -8,24 +8,32 @@ const PrescriptionModal = ({
   setPrescriptionData,
   onSave,
 }) => {
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave();
+  };
+
   return (
-    <Modal show={show} onHide={onHide}>
+    <Modal show={show} onHide={onHide} centered>
       <Modal.Header closeButton>
-        <Modal.Title>Add Prescription</Modal.Title>
+        <Modal.Title as="h2" style={{ fontSize: "1.3125rem" }}>
+          Add prescription
+        </Modal.Title>
       </Modal.Header>
-      <Modal.Body>
-        <Form>
-          <Form.Group className="mb-2">
-            <Form.Label>Drug Name</Form.Label>
+      <Form onSubmit={handleSubmit}>
+        <Modal.Body>
+          <Form.Group className="mb-3 mt-2" controlId="rx-drug">
+            <Form.Label>Drug name</Form.Label>
             <Form.Control
               type="text"
               value={prescriptionData.drug}
               onChange={(e) =>
                 setPrescriptionData({ ...prescriptionData, drug: e.target.value })
               }
+              required
             />
           </Form.Group>
-          <Form.Group className="mb-2">
+          <Form.Group className="mb-3" controlId="rx-time">
             <Form.Label>Time</Form.Label>
             <Form.Control
               type="text"
@@ -36,8 +44,8 @@ const PrescriptionModal = ({
               }
             />
           </Form.Group>
-          <Form.Group className="mb-2">
-            <Form.Label>Meal Time</Form.Label>
+          <Form.Group className="mb-2" controlId="rx-meal">
+            <Form.Label>Meal time</Form.Label>
             <Form.Select
               value={prescriptionData.meal}
               onChange={(e) =>
@@ -48,11 +56,14 @@ const PrescriptionModal = ({
               <option value="Before Meal">Before Meal</option>
             </Form.Select>
           </Form.Group>
-          <Button variant="primary" onClick={onSave}>
-            Save
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="ghost" onClick={onHide}>
+            Cancel
           </Button>
-        </Form>
-      </Modal.Body>
+          <Button type="submit">Save prescription</Button>
+        </Modal.Footer>
+      </Form>
     </Modal>
   );
 };

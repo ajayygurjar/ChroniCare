@@ -1,54 +1,40 @@
-import React from "react";
-import { Nav } from "react-bootstrap";
-import { Link, useLocation } from "react-router-dom";
+import { createElement } from "react";
+import { NavLink } from "react-router-dom";
+import { navItems } from "./navItems";
+import Avatar from "../Common/Avatar";
+import { displayName } from "../../../utils/format";
 
-const Sidebar = ({ role }) => {
-  const location = useLocation();
+// Desktop sidebar. Below 768px it is hidden and TabBar takes over.
+const Sidebar = ({ role, profile }) => {
+  const name = displayName(profile, role);
 
-  const menuItems = {
-    doctor: [
-      { label: "Dashboard", path: "/dashboard" },
-      { label: "Patients", path: "/doctor/patients" },
-      { label: "Appointments", path: "/appointments" },
-    ],
-    patient: [
-      { label: "Dashboard", path: "/dashboard" },
-      { label: "Medical History", path: "/patient/history" },
-      { label: "Appointments", path: "/appointments" },
-    ],
-  };
-
-  const activeStyle = {
-    fontWeight: "bold",
-    color: "#0d6efd",
-  };
   return (
-    <div
-      style={{
-        width: "220px",
-        height: "140vh",
-        padding: "1.5rem",
-        background: "#f8f9fa",
-        borderRight: "3px solid #dee2e6",
-      }}
-    >
-      <h5 className="mb-4" bg='primary'>
-        {role === "doctor" ? "Doctor Panel" : "Patient Panel"}
-      </h5>
+    <aside className="cc-side" aria-label="Main navigation">
+      {navItems[role]?.map(({ label, path, icon }) => (
+        <NavLink
+          key={path}
+          to={path}
+          className={({ isActive }) => `cc-nav${isActive ? " active" : ""}`}
+        >
+          {createElement(icon, { "aria-hidden": true })}
+          {label}
+        </NavLink>
+      ))}
 
-      <Nav className="flex-column">
-        {menuItems[role]?.map((item) => (
-          <Nav.Link
-            key={item.path}
-            as={Link}
-            to={item.path}
-            style={location.pathname === item.path ? activeStyle : {}}
-          >
-            {item.label}
-          </Nav.Link>
-        ))}
-      </Nav>
-    </div>
+      <div className="cc-spacer" />
+
+      <div className="cc-me">
+        <Avatar name={name || role} />
+        <div style={{ minWidth: 0 }}>
+          <b>{name || "Loading…"}</b>
+          <small>
+            {role === "doctor"
+              ? profile?.speciality || "Doctor"
+              : "Patient"}
+          </small>
+        </div>
+      </div>
+    </aside>
   );
 };
 

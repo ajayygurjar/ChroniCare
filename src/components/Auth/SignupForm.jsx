@@ -1,40 +1,92 @@
-import { Form, Button, Alert, Spinner } from "react-bootstrap";
+import { Form, Button, Alert, Spinner, Row, Col } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { signupUser } from "../../../store/authSlice";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { LuChevronLeft } from "react-icons/lu";
+import RoleToggle from "./RoleToggle";
+import PasswordField from "./PasswordField";
+import { useFormValidation } from "../../hooks/useFormValidation";
+import { friendlyAuthError } from "../../../utils/format";
 
-const SignupForm = () => {
+const initialState = {
+  firstName: "",
+  lastName: "",
+  gender: "",
+  age: "",
+  phone: "",
+  address: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  speciality: "",
+  experience: "",
+};
+
+const aboutYouRules = {
+  firstName: { required: true, message: "Enter your first name" },
+  lastName: { required: true, message: "Enter your last name" },
+  gender: { required: true, message: "Select a gender" },
+  age: {
+    required: true,
+    message: "Enter your age",
+    custom: (v) => (Number(v) > 0 && Number(v) <= 120 ? "" : "Enter a valid age"),
+  },
+  phone: { required: true, message: "Enter your phone number" },
+};
+
+const accountRules = (role) => ({
+  address: { required: true, message: "Enter your address" },
+  ...(role === "doctor" && {
+    speciality: { required: true, message: "Enter your speciality" },
+    experience: {
+      required: true,
+      message: "Enter your years of experience",
+      custom: (v) => (Number(v) >= 0 ? "" : "Enter a valid number of years"),
+    },
+  }),
+  email: {
+    required: true,
+    message: "Enter a valid email address",
+    pattern: /^\S+@\S+\.\S+$/,
+  },
+  password: {
+    required: true,
+    message: "Choose a password",
+    custom: (v) => (v.length >= 6 ? "" : "Use at least 6 characters"),
+  },
+  confirmPassword: {
+    required: true,
+    message: "Confirm your password",
+    custom: (v, form) => (v === form.password ? "" : "Passwords do not match"),
+  },
+});
+
+const SignupForm = ({ onSwitch }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isLoading, error } = useSelector((state) => state.auth);
 
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    gender: "",
-    age: "",
-    phone: "",
-    address: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    role: "patient",
-    speciality: "",
-    experience: "",
-  });
+  const [step, setStep] = useState(1);
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const [role, setRole] = useState("patient");
+
+  // Validate only the fields shown on the current step.
+  const { formData, errors, handleChange, validate } = useFormValidation(
+    initialState,
+    step === 1 ? aboutYouRules : accountRules(role)
+  );
+
+  const goNext = (e) => {
+    e.preventDefault();
+    if (validate()) setStep(2);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
-      return;
-    }
+    if (!validate()) return;
+    setSubmitted(true);
 
     const {
       firstName,
@@ -45,7 +97,6 @@ const SignupForm = () => {
       address,
       email,
       password,
-      role,
       speciality,
       experience,
     } = formData;
@@ -69,170 +120,124 @@ const SignupForm = () => {
     }
   };
 
+  const field = (name, label, props = {}) => (
+    <Form.Group className="mb-3" controlId={name}>
+      <Form.Label>{label}</Form.Label>
+      <Form.Control
+        name={name}
+        value={formData[name]}
+        onChange={handleChange}
+        isInvalid={!!errors[name]}
+        {...props}
+      />
+      <Form.Control.Feedback type="invalid">{errors[name]}</Form.Control.Feedback>
+    </Form.Group>
+  );
+
   return (
-    <Form
-      style={{ maxWidth: "500px", margin: "0 auto" }}
-      className="px-3 w-100"
-      onSubmit={handleSubmit}
-    >
-      <h2 className="mb-4 text-center">Create Account</h2>
-      {error && <Alert variant="danger">{error}</Alert>}
-      <Form.Group className="mb-3" controlId="firstName">
-        <Form.Label>First Name</Form.Label>
-        <Form.Control
-          type="text"
-          name="firstName"
-          placeholder="First Name"
-          value={formData.firstName}
-          onChange={handleChange}
-          required
-        />
-      </Form.Group>
+    <Form onSubmit={step === 1 ? goNext : handleSubmit} noValidate>
+      <div className="cc-steps" aria-label={`Step ${step} of 2`}>
+        <span className={step === 1 ? "on" : ""}>
+          <b>1</b>About you
+        </span>
+        <span className="bar" />
+        <span className={step === 2 ? "on" : ""}>
+          <b>2</b>Account
+        </span>
+      </div>
 
-      <Form.Group className="mb-3" controlId="lastName">
-        <Form.Label>Last Name</Form.Label>
-        <Form.Control
-          type="text"
-          name="lastName"
-          placeholder="Last Name"
-          value={formData.lastName}
-          onChange={handleChange}
-          required
-        />
-      </Form.Group>
+      <h2 className="mb-3">Create your account</h2>
 
-      <Form.Group className="mb-3" controlId="gender">
-        <Form.Label>Gender</Form.Label>
-        <Form.Select
-          name="gender"
-          value={formData.gender}
-          onChange={handleChange}
-          required
-        >
-          <option value="">Select Gender</option>
-          <option>Male</option>
-          <option>Female</option>
-          <option>Other</option>
-        </Form.Select>
-      </Form.Group>
+      {submitted && error && <Alert variant="danger">{friendlyAuthError(error)}</Alert>}
 
-      <Form.Group className="mb-3" controlId="age">
-        <Form.Label>Age</Form.Label>
-        <Form.Control
-          type="number"
-          name="age"
-          placeholder="Age"
-          value={formData.age}
-          onChange={handleChange}
-          required
-        />
-      </Form.Group>
-
-      <Form.Group className="mb-3" controlId="phone">
-        <Form.Label>Phone Number</Form.Label>
-        <Form.Control
-          type="text"
-          name="phone"
-          placeholder="Phone Number"
-          value={formData.phone}
-          onChange={handleChange}
-          required
-        />
-      </Form.Group>
-
-      <Form.Group className="mb-3" controlId="address">
-        <Form.Label>Address</Form.Label>
-        <Form.Control
-          type="text"
-          name="address"
-          placeholder="Address"
-          value={formData.address}
-          onChange={handleChange}
-          required
-        />
-      </Form.Group>
-
-      <Form.Group className="mb-3" controlId="email">
-        <Form.Label>Email</Form.Label>
-        <Form.Control
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-        />
-      </Form.Group>
-
-      <Form.Group className="mb-3" controlId="password">
-        <Form.Label>Password</Form.Label>
-        <Form.Control
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
-      </Form.Group>
-
-      <Form.Group className="mb-3" controlId="confirmPassword">
-        <Form.Label>Confirm Password</Form.Label>
-        <Form.Control
-          type="password"
-          name="confirmPassword"
-          placeholder="Confirm Password"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          required
-        />
-      </Form.Group>
-      <Form.Group className="mb-3" controlId="role">
-        <Form.Label>Role</Form.Label>
-        <Form.Select
-          name="role"
-          value={formData.role}
-          onChange={handleChange}
-          required
-        >
-          <option value="patient">Patient</option>
-          <option value="doctor">Doctor</option>
-        </Form.Select>
-      </Form.Group>
-
-      {formData.role === "doctor" && (
+      {step === 1 ? (
         <>
-          <Form.Group className="mb-3" controlId="speciality">
-            <Form.Label>Speciality</Form.Label>
-            <Form.Control
-              type="text"
-              name="speciality"
-              placeholder="e.g., Cardiologist, Dentist"
-              value={formData.speciality}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
+          <div className="mb-3">
+            <RoleToggle value={role} onChange={setRole} />
+          </div>
 
-          <Form.Group className="mb-3" controlId="experience">
-            <Form.Label>Experience (in years)</Form.Label>
-            <Form.Control
-              type="number"
-              name="experience"
-              placeholder="Years of experience"
-              value={formData.experience}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
+          <Row>
+            <Col sm={6}>{field("firstName", "First name", { type: "text", autoComplete: "given-name" })}</Col>
+            <Col sm={6}>{field("lastName", "Last name", { type: "text", autoComplete: "family-name" })}</Col>
+          </Row>
+          <Row>
+            <Col sm={6}>
+              <Form.Group className="mb-3" controlId="gender">
+                <Form.Label>Gender</Form.Label>
+                <Form.Select
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                  isInvalid={!!errors.gender}
+                >
+                  <option value="">Select</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </Form.Select>
+                <Form.Control.Feedback type="invalid">{errors.gender}</Form.Control.Feedback>
+              </Form.Group>
+            </Col>
+            <Col sm={6}>{field("age", "Age", { type: "number", min: 0, max: 120 })}</Col>
+          </Row>
+          {field("phone", "Phone", { type: "tel", autoComplete: "tel" })}
+
+          <div className="d-grid mt-4">
+            <Button size="lg" type="submit">
+              Continue
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          {field("address", "Address", { type: "text", autoComplete: "street-address" })}
+
+          {role === "doctor" && (
+            <Row>
+              <Col sm={7}>{field("speciality", "Speciality", { type: "text", placeholder: "e.g., Cardiologist" })}</Col>
+              <Col sm={5}>{field("experience", "Experience (years)", { type: "number", min: 0 })}</Col>
+            </Row>
+          )}
+
+          {field("email", "Email", { type: "email", placeholder: "you@example.com", autoComplete: "email" })}
+
+          <PasswordField
+            id="password"
+            label="Password"
+            name="password"
+            autoComplete="new-password"
+            placeholder="At least 6 characters"
+            value={formData.password}
+            onChange={handleChange}
+            error={errors.password}
+          />
+          <PasswordField
+            id="confirmPassword"
+            label="Confirm password"
+            name="confirmPassword"
+            autoComplete="new-password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            error={errors.confirmPassword}
+          />
+
+          <div className="d-flex gap-2 mt-4">
+            <Button variant="ghost" size="lg" onClick={() => setStep(1)}>
+              <LuChevronLeft aria-hidden="true" /> Back
+            </Button>
+            <Button size="lg" type="submit" className="flex-grow-1" disabled={isLoading}>
+              {isLoading ? <Spinner animation="border" size="sm" /> : "Create account"}
+            </Button>
+          </div>
         </>
       )}
 
-      <div className="d-grid">
-        <Button variant="primary" type="submit">
-          {isLoading ? <Spinner animation="border" size="sm" /> : "Sign Up"}
+      <p className="text-center text-muted mt-4 mb-0" style={{ fontSize: 14 }}>
+        Already have an account?{" "}
+        <Button variant="link" className="p-0 align-baseline" onClick={onSwitch}>
+          Log in
         </Button>
-      </div>
+      </p>
     </Form>
   );
 };

@@ -8,7 +8,7 @@ const LoadingSpinner = ({
   centered = true
 }) => {
   const spinner = (
-    <Stack className="text-center" gap={2}>
+    <Stack className="text-center align-items-center" gap={2}>
       <Spinner animation={size} variant={variant} role="status">
         <span className="visually-hidden">Loading...</span>
       </Spinner>

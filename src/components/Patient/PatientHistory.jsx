@@ -1,122 +1,89 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "react-bootstrap";
+import { LuPlus, LuFileText } from "react-icons/lu";
 import axiosInstance from "../../../utils/axiosInstance";
 import { useSelector } from "react-redux";
 import AddRecordModal from "./AddRecordModal";
-import HistoryTable from "./HistoryTable";
+import RecordCard from "../Common/RecordCard";
+import PageHeader from "../Common/PageHeader";
+import EmptyState from "../Common/EmptyState";
+import LoadingSpinner from "../Common/LoadingSpinner";
+import { usePatientHistory } from "../../hooks/usePatientHistory";
 
-
-const PatientHistory = ({ viewUserId }) => {
+const PatientHistory = () => {
   const { userId } = useSelector((state) => state.auth);
-  const isDoctor = !!viewUserId;
+  const { history, loading, refetch } = usePatientHistory(userId);
 
-  const currentUserId = isDoctor ? viewUserId : userId;
-
-  const [history, setHistory] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ diagnosis: "", notes: "" });
-  const [prescriptionForm, setPrescriptionForm] = useState({});
-  const [doctorInfo, setDoctorInfo] = useState({});
-
-  const fetchHistory = async () => {
-    try {
-        
-
-      const res = await axiosInstance.get(`/history/${currentUserId}.json`);
-      if (res.data) {
-        const parsed = Object.entries(res.data).map(([id, val]) => ({
-          id,
-          ...val,
-        }));
-        setHistory(parsed);
-      } else {
-        setHistory([]);
-      }
-    } catch (error) {
-      console.error("Error fetching history:", error);
-    }
-  };
-
-  const fetchDoctorInfo = async () => {
-    try {
-      const res = await axiosInstance.get(`/doctors/${userId}.json`);
-      if (res.data) {
-        setDoctorInfo({
-          name: `${res.data.firstName} ${res.data.lastName}`,
-          address: res.data.address || "",
-        });
-      }
-    } catch (err) {
-      console.error("Error fetching doctor info", err);
-    }
-  };
-
-  useEffect(() => {
-    if (currentUserId) fetchHistory();
-    if (isDoctor) fetchDoctorInfo();
-  }, [currentUserId, isDoctor,userId]);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentUserId) return;
+    if (!userId) return;
 
-    const newHistory = {
-      diagnosis: formData.diagnosis,
-      notes: formData.notes,
-      date: new Date().toISOString(),
-    };
-    await axiosInstance.post(`/history/${currentUserId}.json`, newHistory);
-
-    setFormData({ diagnosis: "", notes: "", file: null });
-    setShowModal(false);
-    fetchHistory();
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await axiosInstance.post(`/history/${userId}.json`, {
+        diagnosis: formData.diagnosis,
+        notes: formData.notes,
+        date: new Date().toISOString(),
+      });
+      setFormData({ diagnosis: "", notes: "" });
+      setShowModal(false);
+      refetch();
+    } catch (err) {
+      console.error("Error saving record:", err);
+      setSaveError("Could not save the record. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
-  const handlePrescriptionSubmit = async (e, itemId) => {
-    e.preventDefault();
-    const item = prescriptionForm[itemId];
-    if (!item) return;
 
-    await axiosInstance.patch(`/history/${viewUserId}/${itemId}.json`, {
-      prescription: {
-        drug: item.drug,
-        time: item.time,
-        meal: item.meal,
-        addedAt: new Date().toISOString(),
-        prescribedBy: `${doctorInfo.name} (${doctorInfo.address})`,
-      },
-    });
-
-    fetchHistory();
-  };
+  const addButton = (
+    <Button onClick={() => setShowModal(true)}>
+      <LuPlus aria-hidden="true" /> Add record
+    </Button>
+  );
 
   return (
-    <div className="container mt-4">
-      {!isDoctor && (
-        <Button className="mb-3" onClick={() => setShowModal(true)}>
-          Add New Record
-        </Button>
-      )}
-
-      <h4>Medical History</h4>
-
-      <HistoryTable
-        history={history}
-        isDoctor={isDoctor}
-        prescriptionForm={prescriptionForm}
-        setPrescriptionForm={setPrescriptionForm}
-        handlePrescriptionSubmit={handlePrescriptionSubmit}
+    <>
+      <PageHeader
+        title="Medical history"
+        subtitle={`${history.length} ${history.length === 1 ? "record" : "records"} · newest first`}
+        action={addButton}
       />
 
-      {!isDoctor && (
-        <AddRecordModal
-          show={showModal}
-          onHide={() => setShowModal(false)}
-          formData={formData}
-          setFormData={setFormData}
-          handleSubmit={handleSubmit}
-        />
+      {loading ? (
+        <LoadingSpinner message="Loading your records..." />
+      ) : history.length > 0 ? (
+        <div className="cc-stack">
+          {history.map((record) => (
+            <RecordCard key={record.id} record={record} />
+          ))}
+        </div>
+      ) : (
+        <div className="cc-card">
+          <EmptyState icon={LuFileText} message="No records yet">
+            <Button variant="ghost" size="sm" onClick={() => setShowModal(true)}>
+              Add your first record
+            </Button>
+          </EmptyState>
+        </div>
       )}
-    </div>
+
+      <AddRecordModal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        formData={formData}
+        setFormData={setFormData}
+        handleSubmit={handleSubmit}
+        saving={saving}
+        error={saveError}
+      />
+    </>
   );
 };
 

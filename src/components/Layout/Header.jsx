@@ -1,74 +1,65 @@
-import { Container, Nav, Dropdown, Navbar, Image } from "react-bootstrap";
-import { logout } from "../../../store/authSlice";
+import { Dropdown } from "react-bootstrap";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
-const Header = () => {
-  const { user, role } = useSelector((state) => state.auth);
+import { LuActivity, LuLogOut } from "react-icons/lu";
+import { logout } from "../../../store/authSlice";
+import Avatar from "../Common/Avatar";
+import { displayName } from "../../../utils/format";
+
+const Header = ({ profile }) => {
+  const { user, role, token } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const handleLogout = () => {
     dispatch(logout());
     navigate("/", { replace: true });
   };
 
-  const avatarUrl = `https://ui-avatars.com/api/?name=${
-    user || "U"
-  }&background=0D8ABC&color=fff`;
+  const name = displayName(profile, role) || user || "Account";
 
   return (
-    <>
-      <Navbar
-        bg="info"
-        variant="light"
-        expand="lg"
-        fixed="top"
-        style={{
-          zIndex: 1030,
-          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-        }}
-        collapseOnSelect
-      >
-        <Container>
-          <Navbar.Brand as={Link} to="/">
-            ChroniCare
-          </Navbar.Brand>
+    <header className="cc-top">
+      <Link to={token ? "/dashboard" : "/"} className="cc-logo">
+        <span className="cc-mark" aria-hidden="true">
+          <LuActivity />
+        </span>
+        ChroniCare
+      </Link>
 
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="ms-auto">
-              {user ? (
-                <Dropdown align="end">
-                  <Dropdown.Toggle variant="light" id="dropdown-user">
-                    <Image
-                      src={avatarUrl}
-                      roundCircle
-                      height="30"
-                      width="30"
-                      className="me-2"
-                    />
-                    {role}
-                  </Dropdown.Toggle>
-
-                  <Dropdown.Menu>
-                    <Dropdown.Item as={Link} to="/dashboard">
-                      Dashboard
-                    </Dropdown.Item>
-                    <Dropdown.Divider />
-                    <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
-              ) : (
-                <Nav.Link as={Link} to="/auth">
-                  Login
-                </Nav.Link>
-              )}
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
-      <div style={{ height: "56px" }}></div>
-    </>
+      {token ? (
+        <Dropdown align="end">
+          <Dropdown.Toggle as="button" className="cc-user-toggle" id="dropdown-user">
+            <Avatar name={name} size="sm" />
+            <span className="d-none d-md-inline">{name}</span>
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Header style={{ textTransform: "capitalize" }}>
+              Signed in as {role}
+            </Dropdown.Header>
+            <Dropdown.Item as="button" onClick={handleLogout}>
+              <LuLogOut className="me-2" aria-hidden="true" />
+              Log out
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+      ) : (
+        <nav className="cc-top-right" aria-label="Site">
+          <Link to="/#features" className="cc-toplink d-none d-md-inline">
+            Features
+          </Link>
+          <Link to="/contact" className="cc-toplink d-none d-md-inline">
+            Contact
+          </Link>
+          <Link to="/auth" className="btn btn-ghost btn-sm">
+            Log in
+          </Link>
+          <Link to="/auth" state={{ mode: "signup" }} className="btn btn-primary btn-sm">
+            Create account
+          </Link>
+        </nav>
+      )}
+    </header>
   );
 };
 
