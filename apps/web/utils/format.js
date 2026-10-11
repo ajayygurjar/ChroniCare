@@ -1,6 +1,7 @@
-// Appointment dates are stored as local calendar days ("YYYY-MM-DD", from <input type="date">)
-// and times as "HH:MM". Never run them through toISOString(): that converts to UTC and shifts
-// the day backwards in any timezone ahead of UTC (e.g. IST).
+// The API stores an appointment as one exact moment (`scheduledAt`, ISO 8601). The screens work with the
+// viewer's local calendar day ("YYYY-MM-DD", as <input type="date"> gives) and time ("HH:MM"), so the
+// two are converted at the edges: appointmentFromApi() on the way in, scheduledAtFor() on the way out.
+// Never build a day with toISOString(): that is UTC and shifts the day backwards in timezones ahead of it.
 
 export const toLocalISODate = (d = new Date()) => {
   const y = d.getFullYear();
@@ -8,6 +9,19 @@ export const toLocalISODate = (d = new Date()) => {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 };
+
+// "HH:MM" on the viewer's clock.
+export const toLocalTime = (d = new Date()) =>
+  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+
+// API appointment -> the shape the screens use (adds local `date` and `time`).
+export const appointmentFromApi = (appointment) => {
+  const when = new Date(appointment.scheduledAt);
+  return { ...appointment, date: toLocalISODate(when), time: toLocalTime(when) };
+};
+
+// The viewer's local "YYYY-MM-DD" + "HH:MM" -> the exact moment to send to the API.
+export const scheduledAtFor = (date, time) => new Date(`${date}T${time}`).toISOString();
 
 // "YYYY-MM-DD" (or a full ISO string) -> Date at local midnight of that calendar day.
 export const parseLocalDate = (value) => {
@@ -87,20 +101,3 @@ export const STATUS = {
 
 export const statusMeta = (status) =>
   STATUS[status] || { label: status ? status[0].toUpperCase() + status.slice(1) : "Unknown", tone: "neutral" };
-
-// Firebase Auth returns upper-case codes ("EMAIL_EXISTS", "WEAK_PASSWORD : Password should be …").
-export const friendlyAuthError = (message) => {
-  if (!message) return "";
-  const code = String(message).split(":")[0].trim();
-  const known = {
-    EMAIL_EXISTS: "An account with this email already exists. Try logging in instead.",
-    INVALID_LOGIN_CREDENTIALS: "Email or password is incorrect.",
-    INVALID_PASSWORD: "Email or password is incorrect.",
-    EMAIL_NOT_FOUND: "Email or password is incorrect.",
-    INVALID_EMAIL: "Enter a valid email address.",
-    WEAK_PASSWORD: "Choose a password with at least 6 characters.",
-    USER_DISABLED: "This account has been disabled.",
-    TOO_MANY_ATTEMPTS_TRY_LATER: "Too many attempts. Wait a few minutes and try again.",
-  };
-  return known[code] || message;
-};

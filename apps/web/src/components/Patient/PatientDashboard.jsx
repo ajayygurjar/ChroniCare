@@ -22,13 +22,13 @@ const PatientDashboard = () => {
   const { userId } = useSelector((state) => state.auth);
   const { appointments } = useSelector((state) => state.appointments);
 
-  const { profile, loading } = useProfile("patient");
+  const { profile, loading } = useProfile();
   const { stats, nextAppointment } = useAppointmentsStats(appointments);
   const { history } = usePatientHistory(userId);
 
   useEffect(() => {
     if (userId) {
-      dispatch(fetchAppointments({ userId, role: "patient" }));
+      dispatch(fetchAppointments());
     }
   }, [dispatch, userId]);
 

@@ -31,12 +31,12 @@ const DoctorDashboard = () => {
   const { appointments, error } = useSelector((state) => state.appointments);
   const { patients } = useSelector((state) => state.doctor);
 
-  const { profile, loading } = useProfile('doctor');
+  const { profile, loading } = useProfile();
   const { stats, pendingList, todayAppointments } = useAppointmentsStats(appointments);
 
   useEffect(() => {
     if (userId) {
-      dispatch(fetchAppointments({ userId, role: 'doctor' }));
+      dispatch(fetchAppointments());
       dispatch(fetchAllPatients());
     }
   }, [dispatch, userId]);
@@ -46,7 +46,7 @@ const DoctorDashboard = () => {
   }
 
   const respond = (appointment, newStatus) =>
-    dispatch(updateAppointmentStatus({ appointmentId: appointment.id, newStatus, appointment }));
+    dispatch(updateAppointmentStatus({ appointmentId: appointment.id, newStatus }));
 
   const now = new Date();
   const nowIndex = todayAppointments.findIndex(

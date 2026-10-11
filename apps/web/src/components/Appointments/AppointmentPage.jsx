@@ -15,7 +15,7 @@ import BookAppointmentModal from './BookAppointmentModal';
 import PageHeader from '../Common/PageHeader';
 import EmptyState from '../Common/EmptyState';
 import LoadingSpinner from '../Common/LoadingSpinner';
-import axiosInstance from '../../../utils/axiosInstance';
+import api from '../../../utils/axiosInstance';
 import { useProfile } from '../../hooks/userProfile';
 import { useAppointmentsStats } from '../../hooks/useAppointmentsStats';
 import { formatLongDate, toLocalISODate, fullName, appointmentStart } from '../../../utils/format';
@@ -32,18 +32,19 @@ const AppointmentPage = () => {
     successMessage,
   } = useSelector((state) => state.appointments);
 
-  const { profile } = useProfile(role);
+  const { profile } = useProfile();
   const { upcomingList } = useAppointmentsStats(appointments);
 
   const [doctors, setDoctors] = useState([]);
   const [showBookModal, setShowBookModal] = useState(false);
+  const [bookError, setBookError] = useState(null);
   const [showPast, setShowPast] = useState(false);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
 
-  // Fetch appointments on load
+  // Fetch appointments (and, for patients, the doctors to choose from) on load
   useEffect(() => {
     if (userId) {
-      dispatch(fetchAppointments({ userId, role }));
+      dispatch(fetchAppointments());
     }
     if (role === 'patient') {
       fetchDoctors();
@@ -68,35 +69,31 @@ const AppointmentPage = () => {
 
   const fetchDoctors = async () => {
     try {
-      const res = await axiosInstance.get('/doctors.json');
-      if (res.data) {
-        const doctorList = Object.entries(res.data)
-          .map(([id, doctor]) => ({ id, ...doctor }));
-        setDoctors(doctorList);
-      }
+      const { data } = await api.get('/doctors');
+      setDoctors(data.doctors);
     } catch (err) {
       console.error('Error fetching doctors:', err);
     }
   };
 
-  const handleBookAppointment = (formData) => {
-    dispatch(bookAppointment({
-      appointmentData: formData,
-      patientId: userId,
-    }));
+  const openBookModal = () => {
+    setBookError(null);
+    setShowBookModal(true);
+  };
 
-    setShowBookModal(false);
+  // Close the form only when the server accepted the request; a taken slot keeps it open with the reason.
+  const handleBookAppointment = async (formData) => {
+    setBookError(null);
+    const result = await dispatch(bookAppointment({ appointmentData: formData }));
+    if (bookAppointment.fulfilled.match(result)) {
+      setShowBookModal(false);
+    } else {
+      setBookError(result.payload);
+    }
   };
 
   const handleStatusUpdate = (appointmentId, newStatus) => {
-    const appointment = appointments.find(app => app.id === appointmentId);
-    if (!appointment) return;
-
-    dispatch(updateAppointmentStatus({
-      appointmentId,
-      newStatus,
-      appointment,
-    }));
+    dispatch(updateAppointmentStatus({ appointmentId, newStatus }));
   };
 
   const selectedKey = toLocalISODate(selectedDate);
@@ -122,7 +119,7 @@ const AppointmentPage = () => {
         }
         action={
           isPatient && (
-            <Button onClick={() => setShowBookModal(true)}>
+            <Button onClick={() => openBookModal()}>
               <LuPlus aria-hidden="true" /> Book visit
             </Button>
           )
@@ -157,7 +154,7 @@ const AppointmentPage = () => {
               ) : (
                 <EmptyState icon={LuCalendarDays} message="No visits on this day">
                   {isPatient && (
-                    <Button variant="ghost" size="sm" onClick={() => setShowBookModal(true)}>
+                    <Button variant="ghost" size="sm" onClick={() => openBookModal()}>
                       Book for this day
                     </Button>
                   )}
@@ -214,6 +211,7 @@ const AppointmentPage = () => {
           onBook={handleBookAppointment}
           selectedDate={selectedDate}
           patientName={fullName(profile)}
+          error={bookError}
         />
       )}
     </>

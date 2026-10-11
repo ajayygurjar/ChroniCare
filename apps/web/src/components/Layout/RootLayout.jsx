@@ -8,7 +8,7 @@ import { useProfile } from "../../hooks/userProfile";
 const RootLayout = () => {
   const { token, role } = useSelector((state) => state.auth);
   const { pathname } = useLocation();
-  const { profile } = useProfile(role);
+  const { profile } = useProfile();
 
   // The auth screen is a full-page split layout with its own logo.
   if (pathname === "/auth") return <Outlet />;

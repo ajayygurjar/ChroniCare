@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Alert } from "react-bootstrap";
 import { LuChevronLeft, LuFileText } from "react-icons/lu";
-import axiosInstance from "../../../utils/axiosInstance";
-import { useSelector } from "react-redux";
+import api, { apiErrorMessage } from "../../../utils/axiosInstance";
 import PatientDetails from "./SinglePatientView/PatientDetails";
 import PrescriptionModal from "./SinglePatientView/PrescriptionModal";
 import RecordCard from "../Common/RecordCard";
@@ -10,64 +10,59 @@ import EmptyState from "../Common/EmptyState";
 import LoadingSpinner from "../Common/LoadingSpinner";
 import { usePatientHistory } from "../../hooks/usePatientHistory";
 
+const emptyPrescription = { drug: "", time: "", meal: "after" };
+
 const SinglePatientView = () => {
   const { id } = useParams();
-  const { userId } = useSelector((state) => state.auth);
-  const { history, refetch } = usePatientHistory(id);
+  const { history, error: historyError, refetch } = usePatientHistory(id);
 
   const [patient, setPatient] = useState(null);
+  const [loadError, setLoadError] = useState(null);
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(null);
-  const [prescriptionData, setPrescriptionData] = useState({
-    drug: "",
-    time: "",
-    meal: "After Meal",
-  });
-  const [doctorInfo, setDoctorInfo] = useState({ name: "", address: "" });
+  const [prescriptionData, setPrescriptionData] = useState(emptyPrescription);
+  const [saveError, setSaveError] = useState(null);
 
+  // The API only returns a patient to a doctor who has an appointment with them.
   useEffect(() => {
     const fetchPatient = async () => {
       try {
-        const res = await axiosInstance.get(`/patients/${id}.json`);
-        setPatient(res.data);
+        const { data } = await api.get(`/patients/${id}`);
+        setPatient(data.patient);
+        setLoadError(null);
       } catch (err) {
-        console.error("Failed to load patient info", err);
+        setLoadError(apiErrorMessage(err, "Could not load this patient."));
       }
     };
-
-    const fetchDoctorInfo = async () => {
-      try {
-        const res = await axiosInstance.get(`/doctors/${userId}.json`);
-        if (res.data) {
-          setDoctorInfo({
-            name: `${res.data.firstName} ${res.data.lastName}`,
-            address: res.data.address,
-          });
-        }
-      } catch (err) {
-        console.error("Failed to fetch doctor info", err);
-      }
-    };
-
     fetchPatient();
-    fetchDoctorInfo();
-  }, [id, userId]);
+  }, [id]);
+
+  const openPrescriptionModal = (historyId) => {
+    setSaveError(null);
+    setPrescriptionData(emptyPrescription);
+    setShowPrescriptionModal(historyId);
+  };
 
   const handlePrescriptionSubmit = async (historyId) => {
     try {
-      await axiosInstance.patch(`/history/${id}/${historyId}.json`, {
-        prescription: {
-          ...prescriptionData,
-          addedAt: new Date().toISOString(),
-          prescribedBy: `${doctorInfo.name} (${doctorInfo.address})`,
-        },
-      });
+      await api.post(`/history/${historyId}/prescription`, prescriptionData);
       setShowPrescriptionModal(null);
-      setPrescriptionData({ drug: "", time: "", meal: "After Meal" });
+      setPrescriptionData(emptyPrescription);
       refetch();
     } catch (err) {
-      console.error("Error saving prescription", err);
+      setSaveError(apiErrorMessage(err, "Could not save the prescription."));
     }
   };
+
+  if (loadError) {
+    return (
+      <>
+        <Link to="/doctor/patients" className="cc-link d-inline-flex align-items-center gap-1 mb-3">
+          <LuChevronLeft aria-hidden="true" /> All patients
+        </Link>
+        <Alert variant="danger">{loadError}</Alert>
+      </>
+    );
+  }
 
   if (!patient) return <LoadingSpinner message="Loading patient details..." />;
 
@@ -86,13 +81,15 @@ const SinglePatientView = () => {
         </span>
       </div>
 
+      {historyError && <Alert variant="danger">{historyError}</Alert>}
+
       {history.length > 0 ? (
         <div className="cc-stack mt-2">
           {history.map((record) => (
             <RecordCard
               key={record.id}
               record={record}
-              onAddPrescription={setShowPrescriptionModal}
+              onAddPrescription={openPrescriptionModal}
             />
           ))}
         </div>
@@ -108,6 +105,7 @@ const SinglePatientView = () => {
         prescriptionData={prescriptionData}
         setPrescriptionData={setPrescriptionData}
         onSave={() => handlePrescriptionSubmit(showPrescriptionModal)}
+        error={saveError}
       />
     </>
   );

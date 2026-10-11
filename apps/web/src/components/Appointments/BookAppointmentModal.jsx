@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Form, Button } from 'react-bootstrap';
+import { Modal, Form, Button, Alert } from 'react-bootstrap';
 import { LuCheck } from 'react-icons/lu';
 import Avatar from '../Common/Avatar';
 import { toLocalISODate, fullName } from '../../../utils/format';
@@ -31,7 +31,7 @@ const initialDate = (selectedDate) => {
 };
 
 // Mounted only while the modal is open, so every opening starts from fresh state.
-const BookForm = ({ doctors, selectedDate, onBook, onHide }) => {
+const BookForm = ({ doctors, selectedDate, onBook, onHide, error }) => {
   const today = toLocalISODate();
 
   const [form, setForm] = useState(() => ({
@@ -61,6 +61,7 @@ const BookForm = ({ doctors, selectedDate, onBook, onHide }) => {
   return (
     <Form onSubmit={handleSubmit}>
       <Modal.Body>
+        {error && <Alert variant="danger" className="mt-2 mb-0">{error}</Alert>}
         <span className="form-label d-block mt-2">Doctor</span>
         <div role="radiogroup" aria-label="Doctor">
           {doctors.length === 0 && (
@@ -162,7 +163,7 @@ const BookForm = ({ doctors, selectedDate, onBook, onHide }) => {
   );
 };
 
-const BookAppointmentModal = ({ show, onHide, doctors, onBook, selectedDate, patientName }) => (
+const BookAppointmentModal = ({ show, onHide, doctors, onBook, selectedDate, patientName, error }) => (
   <Modal show={show} onHide={onHide} centered>
     <Modal.Header closeButton>
       <div>
@@ -177,6 +178,7 @@ const BookAppointmentModal = ({ show, onHide, doctors, onBook, selectedDate, pat
       selectedDate={selectedDate}
       onBook={onBook}
       onHide={onHide}
+      error={error}
     />
   </Modal>
 );

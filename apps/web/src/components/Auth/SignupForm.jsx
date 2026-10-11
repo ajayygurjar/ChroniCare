@@ -7,13 +7,13 @@ import { LuChevronLeft } from "react-icons/lu";
 import RoleToggle from "./RoleToggle";
 import PasswordField from "./PasswordField";
 import { useFormValidation } from "../../hooks/useFormValidation";
-import { friendlyAuthError } from "../../../utils/format";
+import { toLocalISODate } from "../../../utils/format";
 
 const initialState = {
   firstName: "",
   lastName: "",
   gender: "",
-  age: "",
+  dateOfBirth: "",
   phone: "",
   address: "",
   email: "",
@@ -27,10 +27,14 @@ const aboutYouRules = {
   firstName: { required: true, message: "Enter your first name" },
   lastName: { required: true, message: "Enter your last name" },
   gender: { required: true, message: "Select a gender" },
-  age: {
+  dateOfBirth: {
     required: true,
-    message: "Enter your age",
-    custom: (v) => (Number(v) > 0 && Number(v) <= 120 ? "" : "Enter a valid age"),
+    message: "Enter your date of birth",
+    custom: (v) => {
+      if (v > toLocalISODate()) return "Date of birth cannot be in the future";
+      if (Number(v.slice(0, 4)) < new Date().getFullYear() - 120) return "Enter a valid date of birth";
+      return "";
+    },
   },
   phone: { required: true, message: "Enter your phone number" },
 };
@@ -53,7 +57,7 @@ const accountRules = (role) => ({
   password: {
     required: true,
     message: "Choose a password",
-    custom: (v) => (v.length >= 6 ? "" : "Use at least 6 characters"),
+    custom: (v) => (v.length >= 8 ? "" : "Use at least 8 characters"),
   },
   confirmPassword: {
     required: true,
@@ -92,7 +96,7 @@ const SignupForm = ({ onSwitch }) => {
       firstName,
       lastName,
       gender,
-      age,
+      dateOfBirth,
       phone,
       address,
       email,
@@ -101,18 +105,19 @@ const SignupForm = ({ onSwitch }) => {
       experience,
     } = formData;
 
-    const profile = {
-      firstName,
-      lastName,
-      gender,
-      age,
-      phone,
-      address,
-      ...(role === "doctor" && { speciality, experience }),
-    };
-
     const result = await dispatch(
-      signupUser({ email, password, role, profile })
+      signupUser({
+        role,
+        email,
+        password,
+        firstName,
+        lastName,
+        gender,
+        dateOfBirth,
+        phone,
+        address,
+        ...(role === "doctor" && { speciality, experience: Number(experience) }),
+      })
     );
 
     if (signupUser.fulfilled.match(result)) {
@@ -148,7 +153,7 @@ const SignupForm = ({ onSwitch }) => {
 
       <h2 className="mb-3">Create your account</h2>
 
-      {submitted && error && <Alert variant="danger">{friendlyAuthError(error)}</Alert>}
+      {submitted && error && <Alert variant="danger">{error}</Alert>}
 
       {step === 1 ? (
         <>
@@ -178,7 +183,7 @@ const SignupForm = ({ onSwitch }) => {
                 <Form.Control.Feedback type="invalid">{errors.gender}</Form.Control.Feedback>
               </Form.Group>
             </Col>
-            <Col sm={6}>{field("age", "Age", { type: "number", min: 0, max: 120 })}</Col>
+            <Col sm={6}>{field("dateOfBirth", "Date of birth", { type: "date", max: toLocalISODate(), autoComplete: "bday" })}</Col>
           </Row>
           {field("phone", "Phone", { type: "tel", autoComplete: "tel" })}
 

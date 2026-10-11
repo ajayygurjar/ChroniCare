@@ -1,70 +1,33 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axiosInstance from '../utils/axiosInstance';
+import api, { apiErrorMessage } from '../utils/axiosInstance';
+import { logout } from './authSlice';
 
+// A doctor's patients: those who have an appointment with them (the API enforces this).
 export const fetchAllPatients = createAsyncThunk(
   'doctor/fetchAllPatients',
   async (_, thunkAPI) => {
     try {
-      const res = await axiosInstance.get('/patients.json');
-      const users = res.data || {};
-
-      const filtered = Object.entries(users)
-        .map(([id, user]) => ({ id, ...user }));
-
-      return filtered;
+      const { data } = await api.get('/patients');
+      return data.patients;
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      return thunkAPI.rejectWithValue(apiErrorMessage(error));
     }
   }
 );
 
-export const fetchSinglePatientDetails = createAsyncThunk(
-  'doctor/fetchSinglePatientDetails',
-  async (uid, thunkAPI) => {
-    try {
-      const [historyRes, presRes] = await Promise.all([
-        axiosInstance.get(`/history/${uid}.json`),
-        axiosInstance.get(`/patients/${uid}/prescriptions.json`)
-      ]);
-
-      const history = historyRes.data
-        ? Object.entries(historyRes.data).map(([id, val]) => ({ id, ...val }))
-        : [];
-
-      const prescriptions = presRes.data
-        ? Object.entries(presRes.data).map(([id, val]) => ({ id, ...val }))
-        : [];
-
-      return { uid, history, prescriptions };
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
-    }
-  }
-);
-
-export const addPrescription = createAsyncThunk(
-  'doctor/addPrescription',
-  async ({ uid, prescription }, thunkAPI) => {
-    try {
-      const res = await axiosInstance.post(`/patients/${uid}/prescriptions.json`, prescription);
-      return { uid, data: res.data };
-    } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
-    }
-  }
-);
+const initialState = {
+  patients: [],
+  loading: false,
+  error: null,
+};
 
 const doctorSlice = createSlice({
   name: 'doctor',
-  initialState: {
-    patients: [],
-    patientDetails: {}, 
-    loading: false,
-    error: null,
-  },
+  initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
+      .addCase(logout, () => initialState)
 
       .addCase(fetchAllPatients.pending, (state) => {
         state.loading = true;
@@ -75,33 +38,6 @@ const doctorSlice = createSlice({
         state.loading = false;
       })
       .addCase(fetchAllPatients.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      //fetch
-      .addCase(fetchSinglePatientDetails.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchSinglePatientDetails.fulfilled, (state, action) => {
-        const { uid, history, prescriptions } = action.payload;
-        state.patientDetails[uid] = { history, prescriptions };
-        state.loading = false;
-      })
-      .addCase(fetchSinglePatientDetails.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      .addCase(addPrescription.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(addPrescription.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(addPrescription.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

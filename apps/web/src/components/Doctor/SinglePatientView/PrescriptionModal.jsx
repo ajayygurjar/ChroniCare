@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, Form, Button } from "react-bootstrap";
+import { Modal, Form, Button, Alert } from "react-bootstrap";
 
 const PrescriptionModal = ({
   show,
@@ -7,6 +7,7 @@ const PrescriptionModal = ({
   prescriptionData,
   setPrescriptionData,
   onSave,
+  error,
 }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -22,6 +23,7 @@ const PrescriptionModal = ({
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
         <Modal.Body>
+          {error && <Alert variant="danger">{error}</Alert>}
           <Form.Group className="mb-3 mt-2" controlId="rx-drug">
             <Form.Label>Drug name</Form.Label>
             <Form.Control
@@ -52,8 +54,8 @@ const PrescriptionModal = ({
                 setPrescriptionData({ ...prescriptionData, meal: e.target.value })
               }
             >
-              <option value="After Meal">After Meal</option>
-              <option value="Before Meal">Before Meal</option>
+              <option value="after">After Meal</option>
+              <option value="before">Before Meal</option>
             </Form.Select>
           </Form.Group>
         </Modal.Body>

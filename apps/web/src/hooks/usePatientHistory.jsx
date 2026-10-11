@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import axiosInstance from '../../utils/axiosInstance';
+import api, { apiErrorMessage } from '../../utils/axiosInstance';
 
-// Medical-history records for one patient, newest first.
+// Medical-history records for one patient, newest first. The API allows it for the patient
+// themselves and for a doctor who has an appointment with that patient.
 export const usePatientHistory = (patientId) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(!!patientId);
@@ -10,16 +11,11 @@ export const usePatientHistory = (patientId) => {
   const refetch = useCallback(async () => {
     if (!patientId) return;
     try {
-      const res = await axiosInstance.get(`/history/${patientId}.json`);
-      const records = res.data
-        ? Object.entries(res.data).map(([id, val]) => ({ id, ...val }))
-        : [];
-      records.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-      setHistory(records);
+      const { data } = await api.get(`/patients/${patientId}/history`);
+      setHistory(data.records);
       setError(null);
     } catch (err) {
-      console.error('Error fetching history:', err);
-      setError(err.message);
+      setError(apiErrorMessage(err, 'Could not load the medical history.'));
     } finally {
       setLoading(false);
     }

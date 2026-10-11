@@ -1,109 +1,62 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axiosInstance from '../utils/axiosInstance';
+import api, { apiErrorMessage } from '../utils/axiosInstance';
+import { appointmentFromApi, scheduledAtFor } from '../utils/format';
+import { logout } from './authSlice';
 
-
-const getUserData = async (userId, role) => {
-  const collection = role === 'doctor' ? 'doctors' : 'patients';
-  const response = await axiosInstance.get(`/${collection}/${userId}.json`);
-  return response.data;
-};
-
-// Fetch appointments
+// The API returns only the signed-in user's own appointments, as patient or as doctor.
 export const fetchAppointments = createAsyncThunk(
   'appointments/fetchAppointments',
-  async ({ userId, role }, thunkAPI) => {
+  async (_, thunkAPI) => {
     try {
-      
-      const endpoint = role === 'doctor' 
-        ? `/appointments/doctor/${userId}.json`
-        : `/appointments/patient/${userId}.json`;
-      
-      const response = await axiosInstance.get(endpoint);
-      
-      if (response.data) {
-        return Object.entries(response.data).map(([id, appointment]) => ({
-          id,
-          ...appointment
-        }));
-      }
-      return [];
+      const { data } = await api.get('/appointments');
+      return data.appointments.map(appointmentFromApi);
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      return thunkAPI.rejectWithValue(apiErrorMessage(error));
     }
   }
 );
 
-// Book appointment
+// `appointmentData` is { doctorId, date: "YYYY-MM-DD", time: "HH:MM", reason } on the patient's clock.
+// The server knows who the patient is from the access token, and rejects a taken slot with 409.
 export const bookAppointment = createAsyncThunk(
   'appointments/bookAppointment',
-  async ({ appointmentData,patientId }, thunkAPI) => {
+  async ({ appointmentData }, thunkAPI) => {
     try {
-      const appointmentId = Date.now().toString();
-      
-       const doctorData = await getUserData(appointmentData.doctorId, 'doctor');
-      if (!doctorData) {
-        return thunkAPI.rejectWithValue('Doctor not found');
-      }
-      
-      // Get patient data from patients collection
-      const patientData = await getUserData(patientId, 'patient');
-      if (!patientData) {
-        return thunkAPI.rejectWithValue('Patient not found');
-      }
-
-      const newAppointment = {
-        ...appointmentData,
-        id: appointmentId,
-        patientId,
-        patientEmail: patientData.email,
-        patientName: `${patientData.firstName} ${patientData.lastName}`,
+      const { data } = await api.post('/appointments', {
         doctorId: appointmentData.doctorId,
-        doctorEmail: doctorData.email,
-        doctorName: `${doctorData.firstName} ${doctorData.lastName}`,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-      };
-
-
-      // Save to both patient and doctor
-      await Promise.all([
-        axiosInstance.put(`/appointments/patient/${patientId}/${appointmentId}.json`, newAppointment),
-        axiosInstance.put(`/appointments/doctor/${appointmentData.doctorId}/${appointmentId}.json`, newAppointment)
-      ]);
-
-      return newAppointment;
+        scheduledAt: scheduledAtFor(appointmentData.date, appointmentData.time),
+        reason: appointmentData.reason,
+      });
+      return appointmentFromApi(data.appointment);
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      return thunkAPI.rejectWithValue(apiErrorMessage(error, 'Could not book the appointment.'));
     }
   }
 );
 
-// Update appointment status
+// Doctors only: confirmed, cancelled or completed.
 export const updateAppointmentStatus = createAsyncThunk(
   'appointments/updateAppointmentStatus',
-  async ({ appointmentId, newStatus, appointment}, thunkAPI) => {
+  async ({ appointmentId, newStatus }, thunkAPI) => {
     try {
-       await Promise.all([
-        axiosInstance.patch(`/appointments/patient/${appointment.patientId}/${appointmentId}.json`, 
-          { status: newStatus }),
-        axiosInstance.patch(`/appointments/doctor/${appointment.doctorId}/${appointmentId}.json`, 
-          { status: newStatus })      ]);
-
+      await api.patch(`/appointments/${appointmentId}/status`, { status: newStatus });
       return { appointmentId, newStatus };
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.message);
+      return thunkAPI.rejectWithValue(apiErrorMessage(error, 'Could not update the appointment.'));
     }
   }
 );
+
+const initialState = {
+  appointments: [],
+  loading: false,
+  error: null,
+  successMessage: null,
+};
 
 const appointmentSlice = createSlice({
   name: 'appointments',
-  initialState: {
-    appointments: [],
-    loading: false,
-    error: null,
-    successMessage: null,
-  },
+  initialState,
   reducers: {
     clearMessages: (state) => {
       state.error = null;
@@ -112,6 +65,9 @@ const appointmentSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Another person signing in on this browser must not see the previous person's appointments.
+      .addCase(logout, () => initialState)
+
       // Fetch appointments
       .addCase(fetchAppointments.pending, (state) => {
         state.loading = true;
@@ -125,7 +81,7 @@ const appointmentSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Book appointment
       .addCase(bookAppointment.pending, (state) => {
         state.loading = true;
@@ -134,13 +90,13 @@ const appointmentSlice = createSlice({
       .addCase(bookAppointment.fulfilled, (state, action) => {
         state.loading = false;
         state.appointments.unshift(action.payload);
-        state.successMessage = 'Appointment booked successfully!';
+        state.successMessage = 'Appointment requested. You will see it here once the doctor confirms.';
       })
       .addCase(bookAppointment.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-      
+
       // Update status
       .addCase(updateAppointmentStatus.pending, (state) => {
         state.loading = true;

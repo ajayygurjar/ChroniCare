@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Button } from "react-bootstrap";
+import { Alert, Button } from "react-bootstrap";
 import { LuPlus, LuFileText } from "react-icons/lu";
-import axiosInstance from "../../../utils/axiosInstance";
+import api, { apiErrorMessage } from "../../../utils/axiosInstance";
 import { useSelector } from "react-redux";
 import AddRecordModal from "./AddRecordModal";
 import RecordCard from "../Common/RecordCard";
@@ -12,7 +12,7 @@ import { usePatientHistory } from "../../hooks/usePatientHistory";
 
 const PatientHistory = () => {
   const { userId } = useSelector((state) => state.auth);
-  const { history, loading, refetch } = usePatientHistory(userId);
+  const { history, loading, error, refetch } = usePatientHistory(userId);
 
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({ diagnosis: "", notes: "" });
@@ -26,17 +26,12 @@ const PatientHistory = () => {
     setSaving(true);
     setSaveError(null);
     try {
-      await axiosInstance.post(`/history/${userId}.json`, {
-        diagnosis: formData.diagnosis,
-        notes: formData.notes,
-        date: new Date().toISOString(),
-      });
+      await api.post("/history", { diagnosis: formData.diagnosis, notes: formData.notes });
       setFormData({ diagnosis: "", notes: "" });
       setShowModal(false);
       refetch();
     } catch (err) {
-      console.error("Error saving record:", err);
-      setSaveError("Could not save the record. Please try again.");
+      setSaveError(apiErrorMessage(err, "Could not save the record. Please try again."));
     } finally {
       setSaving(false);
     }
@@ -55,6 +50,8 @@ const PatientHistory = () => {
         subtitle={`${history.length} ${history.length === 1 ? "record" : "records"} · newest first`}
         action={addButton}
       />
+
+      {error && <Alert variant="danger">{error}</Alert>}
 
       {loading ? (
         <LoadingSpinner message="Loading your records..." />

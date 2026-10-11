@@ -5,7 +5,6 @@ import { loginWithRole } from "../../../store/authSlice";
 import { useState } from "react";
 import RoleToggle from "./RoleToggle";
 import PasswordField from "./PasswordField";
-import { friendlyAuthError } from "../../../utils/format";
 
 const LoginForm = ({ onSwitch }) => {
   const dispatch = useDispatch();
@@ -55,7 +54,7 @@ const LoginForm = ({ onSwitch }) => {
         />
       </div>
 
-      {submitted && error && <Alert variant="danger">{friendlyAuthError(error)}</Alert>}
+      {submitted && error && <Alert variant="danger">{error}</Alert>}
 
       <Form.Group className="mb-3" controlId="formEmail">
         <Form.Label>Email</Form.Label>

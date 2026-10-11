@@ -2,7 +2,7 @@ import { Dropdown } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { LuActivity, LuLogOut } from "react-icons/lu";
-import { logout } from "../../../store/authSlice";
+import { logoutUser } from "../../../store/authSlice";
 import Avatar from "../Common/Avatar";
 import { displayName } from "../../../utils/format";
 
@@ -11,8 +11,10 @@ const Header = ({ profile }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    dispatch(logout());
+  // Sign out first (the API ends the session), then leave: otherwise the home page would still see a
+  // signed-in user and bounce straight back to the dashboard.
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
     navigate("/", { replace: true });
   };
 
