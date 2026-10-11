@@ -16,5 +16,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "test", "prisma.config.ts", "vitest.config.ts", "eslint.config.mjs"]
+  "include": ["src", "test", "prisma/seed.ts", "prisma.config.ts", "vitest.config.ts", "eslint.config.mjs"]
 }
