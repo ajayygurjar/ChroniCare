@@ -55,6 +55,11 @@ export function createApp(deps: AppDeps): express.Express {
 
   const modules = { prisma, tokens, config };
   const api = Router();
+  // Medical data and login state: never let a browser or proxy keep a copy.
+  api.use((_req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
   api.use('/auth', authRouter(modules));
   api.use('/doctors', doctorsRouter(modules));
   api.use('/patients', patientsRouter(modules));

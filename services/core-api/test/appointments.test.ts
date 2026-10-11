@@ -31,6 +31,14 @@ describe('GET /api/doctors', () => {
   it('needs a signed-in user', async () => {
     expect((await request(app).get('/api/doctors')).status).toBe(401);
   });
+
+  it('tells browsers and proxies not to cache API responses', async () => {
+    const patient = await register(app, 'patient');
+    const ok = await request(app).get('/api/doctors').set(bearer(patient.token));
+    const denied = await request(app).get('/api/doctors');
+    expect(ok.headers['cache-control']).toBe('no-store');
+    expect(denied.headers['cache-control']).toBe('no-store');
+  });
 });
 
 describe('POST /api/appointments', () => {
