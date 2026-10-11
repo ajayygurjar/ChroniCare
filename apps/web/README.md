@@ -43,7 +43,8 @@
 Don't worry if you don't know all of these - they're just the tools used to build this app:
 
 - **React 19** - Makes the website interactive and fast
-- **Firebase** - Stores all the data securely (like a digital filing cabinet)
+- **Node.js (Express) API** - The server that checks who you are and decides what you may see
+- **PostgreSQL** - The database that stores everything (accounts, appointments, medical history, prescriptions)
 - **Bootstrap 5** - Makes the website look nice and work on phones
 - **Redux Toolkit** - Helps manage data across the app efficiently
 
@@ -53,8 +54,9 @@ Don't worry if you don't know all of these - they're just the tools used to buil
 
 ### **Step 1: What You Need First**
 Before starting, install these on your computer:
-- **Node.js** (Download from [nodejs.org](https://nodejs.org/))
+- **Node.js 22.18 or newer** (Download from [nodejs.org](https://nodejs.org/))
 - **Git** (Download from [git-scm.com](https://git-scm.com/))
+- **Docker Desktop** (Download from [docker.com](https://www.docker.com/products/docker-desktop/)) - it runs the database
 
 ### **Step 2: Download the Project**
 1. Open your terminal/command prompt
@@ -64,38 +66,35 @@ Before starting, install these on your computer:
    ```
 3. Go into the project folder:
    ```bash
-   cd chronicare
+   cd ChroniCare
    ```
 
-### **Step 3: Install Required Packages**
-In your terminal, type:
+### **Step 3: Start the Database and the API (the "back end")**
+The website needs the API and the database running. From the project folder:
 ```bash
+docker compose -f infra/docker-compose.yml up -d    # starts PostgreSQL
+cd services/core-api
+cp .env.example .env
 npm install
+npm run db:generate                                 # prepares the database code
+npm run db:deploy                                   # creates the tables
+npm run dev                                         # starts the API on http://localhost:4000
 ```
-*(This downloads all the tools the project needs)*
+Leave that terminal open. (More details: [services/core-api/README.md](../../services/core-api/README.md).)
 
-### **Step 4: Set Up Firebase (The Database)**
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Create a new project (it's free!)
-3. Enable "Authentication" and "Realtime Database"
-4. Get your Firebase config details
-
-### **Step 5: Create Environment File**
-1. In your project folder, create a file called `.env`
-2. Add these lines (replace with your Firebase details):
-   ```env
-   VITE_FIREBASE_API_KEY=your_api_key_here
-   VITE_FIREBASE_DB_URL=your_database_url_here
-   ```
-
-### **Step 6: Start the Project**
-In your terminal, type:
+### **Step 4: Start the Website**
+Open a **second** terminal in the project folder and type:
 ```bash
+cd apps/web
+npm install
 npm run dev
 ```
+*(No settings file is needed: the website forwards its requests to the API on its own.)*
 
-### **Step 7: Open in Browser**
-Open your web browser and go to: `http://localhost:5173`
+### **Step 5: Open in Browser**
+Open the address the terminal prints (usually `http://localhost:5173`; if that port is busy it prints another one).
+
+Click **Create account**, sign up as a patient, and you are in. To try the doctor side, sign up a second account as a doctor.
 
 🎉 **Congratulations! ChroniCare is now running on your computer!**
 
@@ -127,22 +126,24 @@ chronicare/
 
 ### **🔐 Creating Accounts**
 
-**For Testing Purpose, you can use these demo accounts:**
+**For testing, load the demo accounts into your local database** (in `services/core-api`, run `npm run db:seed`):
 
 **Patient Demo Account:**
-- Email: `patient@demo.com`
-- Password: `demo123`
+- Email: `demo.patient@example.com`
+- Password: `Demo-password-1`
 
 **Doctor Demo Account:**
-- Email: `doctor@demo.com` 
-- Password: `demo123`
+- Email: `demo.doctor@example.com` 
+- Password: `Demo-password-1`
+
+*(They come with a few sample appointments, a record and a prescription. They only exist on your own computer.)*
 
 **Or Create Your Own Account:**
 
 1. **For Patients:**
    - Click "Sign Up"
    - Choose "Patient" as your role
-   - Fill in your details (name, age, contact info)
+   - Fill in your details (name, date of birth, contact info)
    - Click "Create Account"
 
 2. **For Doctors:**
@@ -180,23 +181,23 @@ chronicare/
 ### **❌ Problem: "npm install" doesn't work**
 **✅ Solution:** Make sure you have Node.js installed. Download it from [nodejs.org](https://nodejs.org/)
 
-### **❌ Problem: Firebase errors**
+### **❌ Problem: "Cannot reach the server" or the page keeps loading**
 **✅ Solution:** 
-1. Check your `.env` file has correct Firebase details
-2. Make sure your Firebase project has Authentication and Database enabled
-3. Verify database rules allow read/write access
+1. Make sure the API is running (Step 3). Open `http://localhost:4000/ready` - it should say `ready`
+2. If it says the database is unavailable, start it: `docker compose -f infra/docker-compose.yml up -d`
+3. Open browser developer tools (F12) to see error messages
 
-### **❌ Problem: Page shows "Loading..." forever**
+### **❌ Problem: The API says the database is not reachable**
 **✅ Solution:** 
-1. Check your internet connection
-2. Open browser developer tools (F12) to see error messages
-3. Make sure Firebase database has the right permissions
+1. Make sure Docker Desktop is running
+2. Check `services/core-api/.env` - it should match `.env.example`
+3. Run `npm run db:deploy` in `services/core-api` to create the tables
 
 ### **❌ Problem: Can't login**
 **✅ Solution:**
-1. Make sure you created account with correct role (Patient/Doctor)
-2. Check if email and password are correct
-3. Try the demo accounts provided above
+1. Make sure you created the account with the correct role (Patient/Doctor) and picked the same role on the login screen
+2. Check if email and password are correct (passwords are at least 8 characters)
+3. After many wrong attempts the API pauses logins for a few minutes
 
 ### **❌ Problem: Appointments not showing**
 **✅ Solution:**
@@ -226,7 +227,7 @@ chronicare/
 ### **📋 Medical History**
 - Patients can add their own medical records
 - Doctors can see patient history when treating them
-- All records are saved securely in Firebase
+- All records are saved in the PostgreSQL database; a doctor can only open patients who have an appointment with them
 - Include diagnosis, notes, and dates
 
 ### **💊 Prescriptions**
@@ -251,7 +252,7 @@ Test it on your phone: [chronicare-ffd95.web.app](https://chronicare-ffd95.web.a
 
 ## 🚀 Deployment
 
-This project is deployed on **Firebase Hosting** which provides:
+The website is a static build, hosted on **Firebase Hosting** which provides:
 - ⚡ **Fast loading** with global CDN
 - 🔒 **HTTPS security** by default  
 - 🌐 **Custom domain** support
@@ -260,6 +261,10 @@ This project is deployed on **Firebase Hosting** which provides:
 **Live URLs:**
 - Primary: [chronicare-ffd95.web.app](https://chronicare-ffd95.web.app/)
 - Alternative: [chronicare-ffd95.firebaseapp.com](https://chronicare-ffd95.firebaseapp.com/)
+
+> ⚠️ **The live site is the earlier version, which still talks to Firebase.** The current code needs the
+> Node.js API and PostgreSQL, so do **not** run `firebase deploy` for this version until the API is hosted
+> somewhere and `/api` on your domain is forwarded to it (the plan: a gateway in front of both).
 
 ---
 
@@ -274,7 +279,7 @@ This project is deployed on **Firebase Hosting** which provides:
 **Intermediate Level:**
 - ✅ React Hooks and state management
 - ✅ Redux for complex state handling
-- ✅ Firebase integration
+- ✅ Talking to a REST API with token-based sign-in
 - ✅ Component-based architecture
 
 **Advanced Level:**
@@ -295,7 +300,8 @@ This project is deployed on **Firebase Hosting** which provides:
 
 ### **Great Resources for Help:**
 - [React Documentation](https://react.dev/) - Official React guide
-- [Firebase Documentation](https://firebase.google.com/docs) - Firebase help
+- [Express](https://expressjs.com/) and [Prisma](https://www.prisma.io/docs) - the API and its database layer
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/) - the database
 - [Stack Overflow](https://stackoverflow.com/) - Programming Q&A
 - [MDN Web Docs](https://developer.mozilla.org/) - Web development reference
 
@@ -310,7 +316,7 @@ This ChroniCare project demonstrates:
 - ✅ **Professional code organization** 
 - ✅ **Responsive design** for all devices
 - ✅ **Secure authentication** and data handling
-- ✅ **Production deployment** on Firebase
+- ✅ **A real back end**: Node.js API, PostgreSQL, role-based access rules and automated tests
 - ✅ **User-friendly interface** for both patients and doctors
 
 **Perfect for showing employers what you can build!** 💼
@@ -339,9 +345,10 @@ Use this checklist to make sure everything works:
 - **Frontend Framework:** React 19.1.0
 - **State Management:** Redux Toolkit 2.8.2
 - **Styling:** Bootstrap 5.3.7
-- **Backend:** Firebase Realtime Database
-- **Authentication:** Firebase Auth
-- **Hosting:** Firebase Hosting
+- **Backend:** Node.js 22, Express 5, Prisma 7 (`services/core-api`)
+- **Database:** PostgreSQL 17
+- **Authentication:** short-lived JWT access tokens and a rotating httpOnly refresh cookie
+- **Hosting:** Firebase Hosting (website only)
 - **Build Tool:** Vite 7.0.4
 
 ---

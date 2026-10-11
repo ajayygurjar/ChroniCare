@@ -2,10 +2,15 @@
 
 ## Where we are and where we are going
 
-**Today** the React app talks directly to the Firebase Realtime Database and Firebase Auth. There is no
-backend, so authorization happens in the browser and the database rules have to be open.
+**Before** (the Firebase version) the React app talked directly to the Firebase Realtime Database and
+Firebase Auth. There was no backend, so authorization happened in the browser and the database rules had
+to be open.
 
-**Target** is a small set of services behind one gateway:
+**Today** the React app talks only to `core-api`, which authenticates users, enforces who may see what,
+and stores everything in PostgreSQL. Firebase Hosting still serves the static site. See
+[adr/0003-authentication.md](adr/0003-authentication.md).
+
+**Target** adds the remaining services behind one gateway:
 
 ```
 Browser (apps/web)
@@ -40,7 +45,7 @@ work (OCR) and cross-service events (`payment.succeeded`).
 | Phase | Goal | State |
 |---|---|---|
 | 0 Foundations | Monorepo, services build and test in CI | In progress: monorepo, core-api scaffold, PostgreSQL, CI for web and core-api are done. ai-service, payment-service, Redis, RabbitMQ, object storage, gateway and `contracts/` are not started. |
-| 1 Core API replaces Firebase | Same features as today, but secure | Next: auth, appointments, history, prescriptions, data migration from Firebase |
+| 1 Core API replaces Firebase | Same features as before, but secure | Mostly done: sign-in, appointments, history and prescriptions run on the API and PostgreSQL, with role-based access and tests. Still open: hosting the API and gateway so the live site can switch over, "forgot password", and importing old Firebase data (passwords cannot be moved; users re-register). |
 | 2 Prescription upload + OCR | Patient uploads a printed prescription, gets an editable medication list | Not started |
 | 3 Payments | Booking fee in test mode | Not started |
 | 4 AI layer | LLM extraction and plain-language explanations | Not started |

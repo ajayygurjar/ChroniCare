@@ -1,8 +1,8 @@
 # core-api
 
-Node.js + TypeScript + Express 5 + Prisma 7 + PostgreSQL. It will own users and auth, appointments,
-medical history and prescriptions. Right now it has the health endpoints and the database schema; the
-feature endpoints replace Firebase in Phase 1 (see [../../docs/architecture.md](../../docs/architecture.md)).
+Node.js + TypeScript + Express 5 + Prisma 7 + PostgreSQL. It owns users and sign-in, appointments, medical
+history and prescriptions, and is the only thing the web app talks to (see
+[../../docs/architecture.md](../../docs/architecture.md)).
 
 ## Run it
 
@@ -14,16 +14,50 @@ cp .env.example .env     # local development values, matching docker-compose def
 npm install
 npm run db:generate      # Prisma client -> src/generated (git-ignored)
 npm run db:deploy        # apply migrations to core_db
+npm run db:seed          # optional: demo accounts and sample data (see below)
 npm run dev              # http://localhost:4000
 ```
+
+## API
+
+Operational endpoints (not under `/api`):
 
 | Endpoint | Purpose |
 |---|---|
 | `GET /health` | Liveness: the process is up. |
 | `GET /ready` | Readiness: the database answers. `503` when it does not. |
+| `GET /.well-known/jwks.json` | Public key that verifies access tokens (for other services). |
 
-Every response carries `X-Request-Id` (the gateway's id if it sent a sane one). Errors always look like
-`{ "error": { "code", "message", "requestId" } }`.
+Application endpoints, all under `/api`. Everything except sign-up, login, refresh and logout needs
+`Authorization: Bearer <access token>`.
+
+| Endpoint | Who | What |
+|---|---|---|
+| `POST /auth/signup` | anyone | Create a patient or doctor account; signs you in. |
+| `POST /auth/login` | anyone | Sign in. Optional `expectedRole` reports a role mismatch. |
+| `POST /auth/refresh` | cookie | Trade the refresh cookie for a new access token (rotates the cookie). |
+| `POST /auth/logout` | cookie | End the session. |
+| `GET /auth/me` | signed in | The current user and profile. |
+| `GET /doctors` | signed in | Doctors to choose from (no contact details). |
+| `GET /patients` | doctor | The doctor's own patients: those with a non-cancelled appointment with them. |
+| `GET /patients/:id` | patient (self), doctor with an appointment | A patient's profile. |
+| `GET /patients/:id/history` | same | Medical history, newest first, with prescriptions. |
+| `GET /appointments` | patient, doctor | Your own appointments, soonest first. |
+| `POST /appointments` | patient | Request an appointment (`doctorId`, `scheduledAt`, `reason`). `409` if the doctor's slot is taken. |
+| `PATCH /appointments/:id/status` | the doctor | `confirmed`, `cancelled` or `completed`, following the allowed transitions. |
+| `POST /history` | patient | Add a medical record. |
+| `POST /history/:id/prescription` | doctor with an appointment | Prescribe on a record (one per record). |
+
+Every response carries `X-Request-Id` (the gateway's id if it sent a sane one) and `Cache-Control: no-store`.
+Errors always look like `{ "error": { "code", "message", "requestId" } }`; validation errors add a `details`
+list of `{ field, message }`. How sign-in works: [../../docs/adr/0003-authentication.md](../../docs/adr/0003-authentication.md).
+
+## Demo data
+
+`npm run db:seed` creates four accounts with sample appointments, records and prescriptions, all with the
+password `Demo-password-1`: `demo.patient@example.com`, `demo.doctor@example.com`,
+`vikram.joshi@example.com` and `meera.iyer@example.com`. It is safe to run twice and refuses to run when
+`NODE_ENV=production`.
 
 ## Scripts
 
@@ -36,7 +70,9 @@ Every response carries `X-Request-Id` (the gateway's id if it sent a sane one). 
 | `npm run db:migrate -- --name <name>` | Create and apply a new migration while developing |
 | `npm run db:deploy` | Apply pending migrations (what CI and production use) |
 | `npm run db:status` | Show which migrations are applied |
+| `npm run db:seed` | Load demo accounts and sample data (development only) |
 | `npm run db:studio` | Browse the data |
+| `npm run keys:generate` | Print a `JWT_PRIVATE_KEY=...` line for production |
 
 ## Configuration
 
@@ -48,7 +84,13 @@ Validated at startup (`src/config/env.ts`); the server refuses to start on a bad
 | `TEST_DATABASE_URL` | unset | Used instead of `DATABASE_URL` when running tests. Without it, `npm test` refuses to run (outside CI) because tests empty the tables. |
 | `PORT` | `4000` | |
 | `LOG_LEVEL` | `info` | `fatal` `error` `warn` `info` `debug` `trace` `silent` |
-| `NODE_ENV` | `development` | `production` switches logs to JSON |
+| `NODE_ENV` | `development` | `production` switches logs to JSON and requires `JWT_PRIVATE_KEY` |
+| `JWT_PRIVATE_KEY` | throwaway key (dev/test only) | RSA private key (PEM, `\n` escapes allowed) that signs access tokens. Required in production. |
+| `ACCESS_TOKEN_TTL_SECONDS` | `900` | Lifetime of an access token (minimum 60). |
+| `REFRESH_TOKEN_TTL_DAYS` | `7` | Lifetime of a login session. |
+| `COOKIE_SECURE` | `true` in production, else `false` | Send the refresh cookie over HTTPS only. |
+| `AUTH_RATE_LIMIT_MAX` | `20` | Login and sign-up attempts per IP per 15 minutes. |
+| `TRUST_PROXY` | `0` | Number of reverse proxies in front of the API (set `1` behind the gateway). |
 
 ## Database
 
